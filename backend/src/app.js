@@ -1,6 +1,9 @@
 const express = require('express')
 const cors = require('cors')
+const helmet = require('helmet')
+const morgan = require('morgan')
 const { errorHandler } = require('./middlewares/error.middleware')
+const { NODE_ENV } = require('./config/env')
 
 // Import routes
 const productRoutes = require('./routes/product.routes')
@@ -10,20 +13,86 @@ const adminRoutes = require('./routes/admin.routes')
 
 const app = express()
 
-// Middleware
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// Security Headers Middleware
+app.use(helmet())
 
-// Routes
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    // In development, allow all origins
+    if (NODE_ENV === 'development') {
+      return callback(null, true)
+    }
+    
+    // In production, specify allowed origins
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',')
+      : ['http://localhost:3000', 'http://localhost:3001']
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true, // Allow cookies/credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count'],
+  maxAge: 86400, // 24 hours
+}
+
+app.use(cors(corsOptions))
+
+// Request Logging Middleware
+if (NODE_ENV === 'development') {
+  app.use(morgan('dev')) // Colored output for development
+} else {
+  app.use(morgan('combined')) // Standard Apache combined log format for production
+}
+
+// Body Parser Middleware
+app.use(express.json({ limit: '10mb' })) // Limit JSON payload size
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+
+// Trust proxy (important for rate limiting and correct IP addresses)
+app.set('trust proxy', 1)
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Rizwan\'s Desi Ghee API',
+    version: '1.0.0',
+    status: 'running',
+    environment: NODE_ENV,
+  })
+})
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  })
+})
+
+// API Routes
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' })
+// 404 Handler - must be after all routes
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+  })
 })
 
 // Error handling middleware (must be last)

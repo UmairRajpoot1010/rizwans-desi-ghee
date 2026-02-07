@@ -8,4 +8,6 @@ module.exports = {
   JWT_EXPIRE: process.env.JWT_EXPIRE || '7d',
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@rizwansdesighee.com',
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin123',
+  // CORS: Comma-separated list of allowed origins (e.g., "http://localhost:3000,https://example.com")
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
 }
