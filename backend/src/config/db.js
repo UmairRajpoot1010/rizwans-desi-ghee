@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const { MONGODB_URI, NODE_ENV } = require('./env')
 
 // MongoDB connection options
+// Keep this minimal and compatible with the MongoDB Node.js driver used by Mongoose
 const mongooseOptions = {
   // Use new URL parser and unified topology
   useNewUrlParser: true,
@@ -10,9 +11,6 @@ const mongooseOptions = {
   maxPoolSize: 10, // Maintain up to 10 socket connections
   serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
   socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-  // Buffer settings
-  bufferCommands: false, // Disable mongoose buffering
-  bufferMaxEntries: 0, // Disable mongoose buffering
 }
 
 const connectDB = async () => {
