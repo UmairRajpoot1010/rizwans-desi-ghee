@@ -1,60 +1,87 @@
+const mongoose = require('mongoose')
 const Order = require('../models/Order')
 const Product = require('../models/Product')
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id)
+
+const sendResponse = (res, statusCode, { success, message, data, meta }) => {
+  const payload = { success, message }
+  if (data !== undefined) payload.data = data
+  if (meta !== undefined) payload.meta = meta
+  return res.status(statusCode).json(payload)
+}
 
 // @desc    Create new order
 // @route   POST /api/orders
 // @access  Private
+// Payment: COD (Cash-On-Delivery) only. paymentStatus defaults to "pending".
+// Admin marks as "paid" when customer pays on delivery.
 exports.createOrder = async (req, res, next) => {
   try {
     const { items, shippingAddress } = req.body
-    const userId = req.user._id || req.user.id
+    const userId = req.user?._id || req.user?.id
 
-    // Validate items array
+    if (!userId) {
+      return sendResponse(res, 401, {
+        success: false,
+        message: 'Not authenticated',
+      })
+    }
+
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: 'Order must have at least one item',
       })
     }
 
-    // Validate shipping address
     if (!shippingAddress) {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: 'Shipping address is required',
       })
     }
 
-    // Validate and process items
     const orderItems = []
     let totalAmount = 0
 
     for (const item of items) {
+      if (!item.product || !isValidObjectId(item.product)) {
+        return sendResponse(res, 400, {
+          success: false,
+          message: `Invalid product id: ${item.product}`,
+        })
+      }
+
+      if (!item.quantity || item.quantity <= 0) {
+        return sendResponse(res, 400, {
+          success: false,
+          message: 'Each order item must have a positive quantity',
+        })
+      }
+
       const product = await Product.findById(item.product)
       if (!product) {
-        return res.status(404).json({
+        return sendResponse(res, 404, {
           success: false,
           message: `Product with ID ${item.product} not found`,
         })
       }
 
-      // Check if product is active
       if (!product.isActive) {
-        return res.status(400).json({
+        return sendResponse(res, 400, {
           success: false,
           message: `Product ${product.name} is not available`,
         })
       }
 
-      // Check stock availability
       if (!product.hasStock(item.quantity)) {
-        return res.status(400).json({
+        return sendResponse(res, 400, {
           success: false,
           message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`,
         })
       }
 
-      // Add item to order
       orderItems.push({
         product: product._id,
         quantity: item.quantity,
@@ -63,26 +90,29 @@ exports.createOrder = async (req, res, next) => {
 
       totalAmount += product.price * item.quantity
 
-      // Update product stock
       product.stock -= item.quantity
+      if (product.stock < 0) {
+        return sendResponse(res, 400, {
+          success: false,
+          message: `Insufficient stock for ${product.name}`,
+        })
+      }
       await product.save()
     }
 
-    // Create order
     const order = await Order.create({
       user: userId,
       items: orderItems,
       totalAmount,
       shippingAddress,
       status: 'pending',
-      paymentStatus: 'pending',
+      paymentStatus: 'pending', // COD: payment collected on delivery
     })
 
-    // Populate product details
     await order.populate('items.product')
     await order.populate('user', 'name email')
 
-    res.status(201).json({
+    return sendResponse(res, 201, {
       success: true,
       message: 'Order created successfully',
       data: order,
@@ -106,44 +136,36 @@ exports.getAllOrders = async (req, res, next) => {
       sort = '-createdAt',
     } = req.query
 
-    // Build query
     const query = {}
 
-    if (status) {
-      query.status = status
-    }
+    if (status) query.status = status
+    if (paymentStatus) query.paymentStatus = paymentStatus
+    if (userId) query.user = userId
 
-    if (paymentStatus) {
-      query.paymentStatus = paymentStatus
-    }
-
-    if (userId) {
-      query.user = userId
-    }
-
-    // Calculate pagination
-    const pageNum = parseInt(page)
-    const limitNum = parseInt(limit)
+    const pageNum = parseInt(page, 10) || 1
+    const limitNum = parseInt(limit, 10) || 10
     const skip = (pageNum - 1) * limitNum
 
-    // Execute query
-    const orders = await Order.find(query)
-      .populate('user', 'name email phone')
-      .populate('items.product', 'name price images')
-      .sort(sort)
-      .skip(skip)
-      .limit(limitNum)
+    const [orders, total] = await Promise.all([
+      Order.find(query)
+        .populate('user', 'name email phone')
+        .populate('items.product', 'name price images')
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum),
+      Order.countDocuments(query),
+    ])
 
-    // Get total count
-    const total = await Order.countDocuments(query)
-
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
-      count: orders.length,
-      total,
-      page: pageNum,
-      pages: Math.ceil(total / limitNum),
+      message: 'Orders fetched successfully',
       data: orders,
+      meta: {
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        count: orders.length,
+      },
     })
   } catch (error) {
     next(error)
@@ -155,33 +177,44 @@ exports.getAllOrders = async (req, res, next) => {
 // @access  Private
 exports.getMyOrders = async (req, res, next) => {
   try {
-    const userId = req.user._id || req.user.id
+    const userId = req.user?._id || req.user?.id
     const { status, page = 1, limit = 10 } = req.query
+
+    if (!userId) {
+      return sendResponse(res, 401, {
+        success: false,
+        message: 'Not authenticated',
+      })
+    }
 
     const query = { user: userId }
     if (status) {
       query.status = status
     }
 
-    const pageNum = parseInt(page)
-    const limitNum = parseInt(limit)
+    const pageNum = parseInt(page, 10) || 1
+    const limitNum = parseInt(limit, 10) || 10
     const skip = (pageNum - 1) * limitNum
 
-    const orders = await Order.find(query)
-      .populate('items.product', 'name price images')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
+    const [orders, total] = await Promise.all([
+      Order.find(query)
+        .populate('items.product', 'name price images')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Order.countDocuments(query),
+    ])
 
-    const total = await Order.countDocuments(query)
-
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
-      count: orders.length,
-      total,
-      page: pageNum,
-      pages: Math.ceil(total / limitNum),
+      message: 'Orders fetched successfully',
       data: orders,
+      meta: {
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        count: orders.length,
+      },
     })
   } catch (error) {
     next(error)
@@ -193,30 +226,39 @@ exports.getMyOrders = async (req, res, next) => {
 // @access  Private
 exports.getOrderById = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id)
+    const { id } = req.params
+
+    if (!isValidObjectId(id)) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Invalid order id',
+      })
+    }
+
+    const order = await Order.findById(id)
       .populate('user', 'name email phone')
       .populate('items.product', 'name price images description')
 
     if (!order) {
-      return res.status(404).json({
+      return sendResponse(res, 404, {
         success: false,
         message: 'Order not found',
       })
     }
 
-    // Check if order belongs to user or user is admin
-    const userId = req.user._id || req.user.id
+    const userId = req.user?._id || req.user?.id
     const isAdmin = req.admin || (req.user && req.user.role === 'admin')
 
-    if (order.user._id.toString() !== userId.toString() && !isAdmin) {
-      return res.status(403).json({
+    if (!isAdmin && (!userId || order.user._id.toString() !== userId.toString())) {
+      return sendResponse(res, 403, {
         success: false,
         message: 'Not authorized to access this order',
       })
     }
 
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
+      message: 'Order fetched successfully',
       data: order,
     })
   } catch (error) {
@@ -230,46 +272,67 @@ exports.getOrderById = async (req, res, next) => {
 exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { status, paymentStatus } = req.body
-    const orderId = req.params.id
+    const { id } = req.params
 
-    const order = await Order.findById(orderId)
+    if (!isValidObjectId(id)) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Invalid order id',
+      })
+    }
+
+    const order = await Order.findById(id)
     if (!order) {
-      return res.status(404).json({
+      return sendResponse(res, 404, {
         success: false,
         message: 'Order not found',
       })
     }
 
-    // Validate status
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+    const validPaymentStatuses = ['pending', 'paid', 'failed']
+
     if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
       })
     }
 
-    // Validate payment status
-    const validPaymentStatuses = ['pending', 'paid', 'failed']
     if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: `Invalid payment status. Must be one of: ${validPaymentStatuses.join(', ')}`,
       })
     }
 
-    // Update status
+    const currentStatus = order.status
+
+    if (currentStatus === 'cancelled') {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Cannot update a cancelled order',
+      })
+    }
+
+    if (currentStatus === 'delivered' && status && status !== 'delivered') {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Cannot change status of a delivered order',
+      })
+    }
+
+    const previousStatus = order.status
+
     if (status) {
       order.status = status
     }
 
-    // Update payment status
     if (paymentStatus) {
       order.paymentStatus = paymentStatus
     }
 
-    // If order is cancelled, restore product stock
-    if (status === 'cancelled' && order.status !== 'cancelled') {
+    if (status === 'cancelled' && previousStatus !== 'cancelled') {
       for (const item of order.items) {
         const product = await Product.findById(item.product)
         if (product) {
@@ -281,11 +344,10 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     await order.save()
 
-    // Populate before sending response
     await order.populate('user', 'name email')
     await order.populate('items.product', 'name price images')
 
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
       message: 'Order status updated successfully',
       data: order,

@@ -238,6 +238,11 @@ DELETE /admin/users/:id
 ```
 
 ---
+## file uploads
+Upload Product Images
+```
+POST /upload
+```
 
 ## Error Responses
 

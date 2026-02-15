@@ -1,22 +1,31 @@
 const { NODE_ENV } = require('../config/env')
 
+/**
+ * Central error handling middleware
+ * Handles all errors and returns consistent JSON responses
+ * Hides stack traces in production
+ */
 const errorHandler = (err, req, res, next) => {
   let error = { ...err }
   error.message = err.message
   error.statusCode = err.statusCode || 500
 
-  // Log error with stack trace in development
+  // Log error details
   if (NODE_ENV === 'development') {
     console.error('❌ Error:', {
       message: err.message,
       stack: err.stack,
       statusCode: error.statusCode,
+      path: req?.path,
+      method: req?.method,
     })
   } else {
     // In production, log without stack trace
     console.error('❌ Error:', {
       message: err.message,
       statusCode: error.statusCode,
+      path: req?.path,
+      method: req?.method,
     })
   }
 
@@ -52,7 +61,7 @@ const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 401 }
   }
 
-  // Express validator errors
+  // Express validator errors (custom format)
   if (err.name === 'ValidationError' && Array.isArray(err.errors)) {
     const message = err.errors.map((e) => e.msg).join(', ')
     error = { message, statusCode: 400 }
@@ -63,12 +72,19 @@ const errorHandler = (err, req, res, next) => {
     error = { message: 'Not allowed by CORS policy', statusCode: 403 }
   }
 
-  // Send error response
-  res.status(error.statusCode).json({
+  // Send consistent error response
+  // API contract format: { success: false, message: "Error message" }
+  const response = {
     success: false,
     message: error.message || 'Internal Server Error',
-    ...(NODE_ENV === 'development' && { stack: err.stack }),
-  })
+  }
+
+  // Only include stack trace in development
+  if (NODE_ENV === 'development' && err.stack) {
+    response.stack = err.stack
+  }
+
+  res.status(error.statusCode).json(response)
 }
 
 module.exports = { errorHandler }

@@ -1,7 +1,17 @@
 const express = require('express')
 const router = express.Router()
+
+// Middleware
 const { protectAdmin } = require('../middlewares/auth.middleware')
-const { validateOrderStatus, validateAdminLogin } = require('../middlewares/validation.middleware')
+const { authRateLimiter } = require('../middlewares/rateLimit.middleware')
+const {
+  validateProduct,
+  validateProductUpdate,
+  validateOrderStatus,
+  validateAdminLogin,
+} = require('../middlewares/validation.middleware')
+
+// Controllers
 const {
   adminLogin,
   getCurrentAdmin,
@@ -17,26 +27,40 @@ const {
   deleteUser,
 } = require('../controllers/admin.controller')
 
-// Auth routes (public)
-router.post('/auth/login', validateAdminLogin, adminLogin)
+/**
+ * Admin Routes
+ * Base path: /api/admin
+ * Most routes require admin authentication
+ */
 
-// Auth routes (protected)
+// ============================================
+// Authentication Routes (rate limited)
+// ============================================
+router.post('/auth/login', authRateLimiter, validateAdminLogin, adminLogin)
 router.get('/auth/me', protectAdmin, getCurrentAdmin)
 
-// Dashboard
+// ============================================
+// Dashboard Routes
+// ============================================
 router.get('/dashboard/stats', protectAdmin, getStats)
 
-// Products
+// ============================================
+// Product Management Routes
+// ============================================
 router.get('/products', protectAdmin, getAllProducts)
-router.post('/products', protectAdmin, createProduct)
-router.put('/products/:id', protectAdmin, updateProduct)
+router.post('/products', protectAdmin, validateProduct, createProduct)
+router.put('/products/:id', protectAdmin, validateProductUpdate, updateProduct)
 router.delete('/products/:id', protectAdmin, deleteProduct)
 
-// Orders
+// ============================================
+// Order Management Routes
+// ============================================
 router.get('/orders', protectAdmin, getAllOrders)
 router.put('/orders/:id', protectAdmin, validateOrderStatus, updateOrderStatus)
 
-// Users
+// ============================================
+// User Management Routes
+// ============================================
 router.get('/users', protectAdmin, getAllUsers)
 router.put('/users/:id', protectAdmin, updateUser)
 router.delete('/users/:id', protectAdmin, deleteUser)

@@ -16,12 +16,12 @@ const adminSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
-      index: true, // Index for faster lookups
     },
     password: {
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
+      maxlength: [128, 'Password cannot exceed 128 characters'],
       select: false, // Don't return password by default in queries
     },
     role: {
@@ -35,7 +35,6 @@ const adminSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-      index: true, // Index for filtering active admins
     },
   },
   {
@@ -49,7 +48,7 @@ const adminSchema = new mongoose.Schema(
   }
 )
 
-// Indexes for better query performance
+// Indexes - declared once (removed duplicates from schema definition)
 adminSchema.index({ email: 1 }, { unique: true }) // Unique email index
 adminSchema.index({ isActive: 1 }) // Active admins filter
 adminSchema.index({ role: 1 }) // Role-based queries

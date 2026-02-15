@@ -1,5 +1,5 @@
 const app = require('./src/app')
-const { connectDB } = require('./src/config/db')
+const { connectDB, disconnectDB } = require('./src/config/db')
 const { PORT, NODE_ENV } = require('./src/config/env')
 
 // ==============================
@@ -16,7 +16,6 @@ process.on('uncaughtException', (err) => {
 // ==============================
 const startServer = async () => {
   try {
-    // Connect to MongoDB Atlas
     await connectDB()
 
     const server = app.listen(PORT, () => {
@@ -31,27 +30,40 @@ const startServer = async () => {
     process.on('unhandledRejection', (err) => {
       console.error('❌ UNHANDLED REJECTION! Shutting down...')
       console.error(err.name, err.message)
-
-      server.close(() => {
+      server.close(async () => {
+        try {
+          await disconnectDB()
+        } catch (dbErr) {
+          console.error('Error during shutdown:', dbErr.message)
+        }
         process.exit(1)
       })
     })
 
     // ==============================
-    // Graceful shutdown (for production)
+    // Graceful shutdown (SIGTERM, SIGINT)
     // ==============================
-    process.on('SIGTERM', () => {
-      console.log('👋 SIGTERM received. Shutting down gracefully...')
-      server.close(() => {
-        console.log('💥 Process terminated!')
+    const gracefulShutdown = async (signal) => {
+      console.log(`\n👋 ${signal} received. Shutting down gracefully...`)
+      server.close(async () => {
+        try {
+          await disconnectDB()
+          console.log('💥 Process terminated')
+          process.exit(0)
+        } catch (err) {
+          console.error('❌ Error during shutdown:', err.message)
+          process.exit(1)
+        }
       })
-    })
+    }
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 
   } catch (error) {
-    console.error('❌ Failed to start server:', error)
+    console.error('❌ Failed to start server:', error.message)
     process.exit(1)
   }
 }
 
-// Start everything
 startServer()

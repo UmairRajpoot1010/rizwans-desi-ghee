@@ -19,17 +19,18 @@ const productSchema = new mongoose.Schema(
       min: [0, 'Price must be positive'],
       validate: {
         validator: function (value) {
-          return value >= 0
+          return value >= 0 && !isNaN(value)
         },
         message: 'Price must be a positive number',
       },
     },
+    // v1.0: Image URLs as strings. TODO: Cloudinary/S3 integration for uploads
     images: {
       type: [String],
       required: [true, 'At least one product image is required'],
       validate: {
         validator: function (value) {
-          return value && value.length > 0
+          return Array.isArray(value) && value.length > 0
         },
         message: 'At least one product image is required',
       },
@@ -38,14 +39,17 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Product category is required'],
       trim: true,
+      maxlength: [100, 'Category cannot exceed 100 characters'],
     },
     stock: {
       type: Number,
-      required: [true, 'Stock quantity is required'],
+      required: false, // Not required, default handles it
       min: [0, 'Stock cannot be negative'],
       default: 0,
       validate: {
-        validator: Number.isInteger,
+        validator: function (value) {
+          return Number.isInteger(value)
+        },
         message: 'Stock must be an integer',
       },
     },
@@ -61,7 +65,7 @@ const productSchema = new mongoose.Schema(
   }
 )
 
-// Indexes for better query performance
+// Indexes - declared once
 productSchema.index({ name: 'text', description: 'text' }) // Text search index
 productSchema.index({ category: 1 }) // Category index
 productSchema.index({ isActive: 1 }) // Active products filter
@@ -76,6 +80,15 @@ productSchema.virtual('inStock').get(function () {
 // Method to check if product has sufficient stock
 productSchema.methods.hasStock = function (quantity) {
   return this.stock >= quantity && this.isActive
+}
+
+// Method to reduce stock (for order processing)
+productSchema.methods.reduceStock = function (quantity) {
+  if (!this.hasStock(quantity)) {
+    throw new Error('Insufficient stock')
+  }
+  this.stock -= quantity
+  return this.save()
 }
 
 // Static method to find active products

@@ -3,7 +3,7 @@ const cors = require('cors')
 const helmet = require('helmet')
 const morgan = require('morgan')
 const { errorHandler } = require('./middlewares/error.middleware')
-const { NODE_ENV } = require('./config/env')
+const { NODE_ENV, ALLOWED_ORIGINS } = require('./config/env')
 
 // Import routes
 const productRoutes = require('./routes/product.routes')
@@ -16,7 +16,7 @@ const app = express()
 // Security Headers Middleware
 app.use(helmet())
 
-// CORS Configuration
+// CORS Configuration - uses ALLOWED_ORIGINS from env config
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -27,9 +27,9 @@ const corsOptions = {
       return callback(null, true)
     }
     
-    // In production, specify allowed origins
-    const allowedOrigins = process.env.ALLOWED_ORIGINS
-      ? process.env.ALLOWED_ORIGINS.split(',')
+    // In production, use ALLOWED_ORIGINS from env
+    const allowedOrigins = ALLOWED_ORIGINS
+      ? ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
       : ['http://localhost:3000', 'http://localhost:3001']
     
     if (allowedOrigins.indexOf(origin) !== -1) {

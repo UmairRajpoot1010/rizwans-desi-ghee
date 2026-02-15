@@ -1,4 +1,14 @@
+const mongoose = require('mongoose')
 const Product = require('../models/Product')
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id)
+
+const sendResponse = (res, statusCode, { success, message, data, meta }) => {
+  const payload = { success, message }
+  if (data !== undefined) payload.data = data
+  if (meta !== undefined) payload.meta = meta
+  return res.status(statusCode).json(payload)
+}
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -15,47 +25,41 @@ exports.getAllProducts = async (req, res, next) => {
       sort = '-createdAt',
     } = req.query
 
-    // Build query
     const query = { isActive: true }
 
-    // Filter by category
     if (category) {
       query.category = category
     }
 
-    // Filter by price range
     if (minPrice || maxPrice) {
       query.price = {}
       if (minPrice) query.price.$gte = Number(minPrice)
       if (maxPrice) query.price.$lte = Number(maxPrice)
     }
 
-    // Filter by stock availability
     if (inStock === 'true') {
       query.stock = { $gt: 0 }
     }
 
-    // Calculate pagination
-    const pageNum = parseInt(page)
-    const limitNum = parseInt(limit)
+    const pageNum = parseInt(page, 10) || 1
+    const limitNum = parseInt(limit, 10) || 10
     const skip = (pageNum - 1) * limitNum
 
-    // Execute query
-    const products = await Product.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(limitNum)
+    const [products, total] = await Promise.all([
+      Product.find(query).sort(sort).skip(skip).limit(limitNum),
+      Product.countDocuments(query),
+    ])
 
-    // Get total count for pagination
-    const total = await Product.countDocuments(query)
-
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
-      count: products.length,
-      total,
-      page: pageNum,
-      pages: Math.ceil(total / limitNum),
+      message: 'Products fetched successfully',
       data: products,
+      meta: {
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        count: products.length,
+      },
     })
   } catch (error) {
     next(error)
@@ -67,25 +71,27 @@ exports.getAllProducts = async (req, res, next) => {
 // @access  Public
 exports.getProductById = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id)
+    const { id } = req.params
 
-    if (!product) {
-      return res.status(404).json({
+    if (!isValidObjectId(id)) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Invalid product id',
+      })
+    }
+
+    const product = await Product.findById(id)
+
+    if (!product || !product.isActive) {
+      return sendResponse(res, 404, {
         success: false,
         message: 'Product not found',
       })
     }
 
-    // Only return active products for public access
-    if (!product.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found',
-      })
-    }
-
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
+      message: 'Product fetched successfully',
       data: product,
     })
   } catch (error) {
@@ -101,37 +107,40 @@ exports.searchProducts = async (req, res, next) => {
     const { q, page = 1, limit = 10 } = req.query
 
     if (!q || q.trim() === '') {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: 'Search query is required',
       })
     }
 
-    const pageNum = parseInt(page)
-    const limitNum = parseInt(limit)
+    const pageNum = parseInt(page, 10) || 1
+    const limitNum = parseInt(limit, 10) || 10
     const skip = (pageNum - 1) * limitNum
 
-    // Text search using MongoDB text index
     const query = {
       isActive: true,
       $text: { $search: q },
     }
 
-    const products = await Product.find(query, { score: { $meta: 'textScore' } })
-      .sort({ score: { $meta: 'textScore' } })
-      .skip(skip)
-      .limit(limitNum)
+    const [products, total] = await Promise.all([
+      Product.find(query, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } })
+        .skip(skip)
+        .limit(limitNum),
+      Product.countDocuments(query),
+    ])
 
-    const total = await Product.countDocuments(query)
-
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
-      count: products.length,
-      total,
-      page: pageNum,
-      pages: Math.ceil(total / limitNum),
-      query: q,
+      message: 'Products search successful',
       data: products,
+      meta: {
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum) || 1,
+        count: products.length,
+        query: q,
+      },
     })
   } catch (error) {
     next(error)
@@ -141,13 +150,35 @@ exports.searchProducts = async (req, res, next) => {
 // @desc    Create new product
 // @route   POST /api/products
 // @access  Private (Admin)
+// Images: v1.0 accepts URL strings. TODO: Add Cloudinary/S3 upload endpoint.
 exports.createProduct = async (req, res, next) => {
   try {
     const { name, description, price, images, category, stock, isActive } = req.body
 
-    // Create product
+    if (!name || price === undefined) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Product name and price are required',
+      })
+    }
+
+    if (stock !== undefined && stock < 0) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Stock cannot be negative',
+      })
+    }
+
+    const existing = await Product.findOne({ name: name.trim() })
+    if (existing) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Product with this name already exists',
+      })
+    }
+
     const product = await Product.create({
-      name,
+      name: name.trim(),
       description,
       price,
       images,
@@ -156,7 +187,7 @@ exports.createProduct = async (req, res, next) => {
       isActive: isActive !== undefined ? isActive : true,
     })
 
-    res.status(201).json({
+    return sendResponse(res, 201, {
       success: true,
       message: 'Product created successfully',
       data: product,
@@ -171,18 +202,32 @@ exports.createProduct = async (req, res, next) => {
 // @access  Private (Admin)
 exports.updateProduct = async (req, res, next) => {
   try {
+    const { id } = req.params
     const { name, description, price, images, category, stock, isActive } = req.body
 
-    const product = await Product.findById(req.params.id)
+    if (!isValidObjectId(id)) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Invalid product id',
+      })
+    }
+
+    if (stock !== undefined && stock < 0) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Stock cannot be negative',
+      })
+    }
+
+    const product = await Product.findById(id)
 
     if (!product) {
-      return res.status(404).json({
+      return sendResponse(res, 404, {
         success: false,
         message: 'Product not found',
       })
     }
 
-    // Update fields
     if (name !== undefined) product.name = name
     if (description !== undefined) product.description = description
     if (price !== undefined) product.price = price
@@ -191,9 +236,16 @@ exports.updateProduct = async (req, res, next) => {
     if (stock !== undefined) product.stock = stock
     if (isActive !== undefined) product.isActive = isActive
 
+    if (product.stock < 0) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Stock cannot be negative',
+      })
+    }
+
     await product.save()
 
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
       message: 'Product updated successfully',
       data: product,
@@ -208,33 +260,43 @@ exports.updateProduct = async (req, res, next) => {
 // @access  Private (Admin)
 exports.deleteProduct = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id)
+    const { id } = req.params
+
+    if (!isValidObjectId(id)) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Invalid product id',
+      })
+    }
+
+    const product = await Product.findById(id)
 
     if (!product) {
-      return res.status(404).json({
+      return sendResponse(res, 404, {
         success: false,
         message: 'Product not found',
       })
     }
 
-    // Soft delete by setting isActive to false (recommended)
-    // Or hard delete by removing from database
-    const deleteMethod = req.query.hard === 'true' ? 'findByIdAndDelete' : 'updateOne'
+    const hardDelete = req.query.hard === 'true'
 
-    if (deleteMethod === 'findByIdAndDelete') {
-      await Product.findByIdAndDelete(req.params.id)
-      return res.json({
+    if (hardDelete) {
+      await Product.findByIdAndDelete(id)
+      return sendResponse(res, 200, {
         success: true,
         message: 'Product deleted permanently',
-      })
-    } else {
-      product.isActive = false
-      await product.save()
-      return res.json({
-        success: true,
-        message: 'Product deactivated successfully',
+        data: { id: product._id },
       })
     }
+
+    product.isActive = false
+    await product.save()
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Product deactivated successfully',
+      data: { id: product._id },
+    })
   } catch (error) {
     next(error)
   }

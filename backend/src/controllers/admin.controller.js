@@ -4,6 +4,17 @@ const Order = require('../models/Order')
 const User = require('../models/User')
 const { generateToken } = require('../utils/generateToken')
 
+/**
+ * Helper to send a consistent JSON response.
+ * Only includes `data` and `meta` when provided.
+ */
+const sendResponse = (res, statusCode, { success, message, data, meta }) => {
+  const payload = { success, message }
+  if (data !== undefined) payload.data = data
+  if (meta !== undefined) payload.meta = meta
+  return res.status(statusCode).json(payload)
+}
+
 // @desc    Admin login
 // @route   POST /api/admin/auth/login
 // @access  Public
@@ -11,54 +22,55 @@ exports.adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body
 
-    // Validate input
     if (!email || !password) {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: 'Please provide email and password',
       })
     }
 
-    // Find admin by email (include password for comparison)
-    const admin = await Admin.findByEmail(email.toLowerCase())
+    const normalizedEmail = email.toLowerCase().trim()
 
-    if (!admin) {
-      return res.status(401).json({
+    // Find admin by normalized email
+    const admin = await Admin.findByEmail(normalizedEmail)
+
+    if (!admin || admin.role !== 'admin') {
+      return sendResponse(res, 401, {
         success: false,
         message: 'Invalid credentials',
       })
     }
 
-    // Check if admin is active
     if (!admin.isActive) {
-      return res.status(403).json({
+      return sendResponse(res, 403, {
         success: false,
         message: 'Admin account is inactive. Please contact administrator',
       })
     }
 
-    // Verify password
     const isMatch = await admin.comparePassword(password)
     if (!isMatch) {
-      return res.status(401).json({
+      return sendResponse(res, 401, {
         success: false,
         message: 'Invalid credentials',
       })
     }
 
-    // Generate JWT token
+    // JWT payload must include id + role=admin
     const token = generateToken(admin._id, 'admin')
 
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
       message: 'Login successful',
-      token,
-      admin: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-        isActive: admin.isActive,
+      data: {
+        token,
+        admin: {
+          id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          role: 'admin',
+          isActive: admin.isActive,
+        },
       },
     })
   } catch (error) {
@@ -71,17 +83,27 @@ exports.adminLogin = async (req, res, next) => {
 // @access  Private (Admin)
 exports.getCurrentAdmin = async (req, res, next) => {
   try {
-    const admin = await Admin.findById(req.admin._id).select('-password')
+    const adminId = req.admin?._id || req.admin?.id
+
+    if (!adminId) {
+      return sendResponse(res, 401, {
+        success: false,
+        message: 'Not authenticated as admin',
+      })
+    }
+
+    const admin = await Admin.findById(adminId).select('-password')
 
     if (!admin) {
-      return res.status(404).json({
+      return sendResponse(res, 404, {
         success: false,
         message: 'Admin not found',
       })
     }
 
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
+      message: 'Admin profile fetched successfully',
       data: admin,
     })
   } catch (error) {
@@ -89,24 +111,32 @@ exports.getCurrentAdmin = async (req, res, next) => {
   }
 }
 
-// @desc    Get admin stats
+// @desc    Get admin dashboard stats
 // @route   GET /api/admin/dashboard/stats
 // @access  Private (Admin)
 exports.getStats = async (req, res, next) => {
   try {
-    const totalOrders = await Order.countDocuments()
-    const totalProducts = await Product.countDocuments()
-    const totalUsers = await User.countDocuments()
-    const totalRevenue = await Order.aggregate([
-      { $match: { paymentStatus: 'paid' } },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    const [totalOrders, totalProducts, totalUsers, revenueAgg] = await Promise.all([
+      Order.countDocuments(),
+      Product.countDocuments(),
+      User.countDocuments(),
+      Order.aggregate([
+        { $match: { paymentStatus: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+      ]),
     ])
 
-    res.json({
-      totalOrders,
-      totalProducts,
-      totalUsers,
-      totalRevenue: totalRevenue[0]?.total || 0,
+    const totalRevenue = Number(revenueAgg[0]?.total || 0)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Dashboard stats fetched successfully',
+      data: {
+        totalOrders: Number(totalOrders) || 0,
+        totalProducts: Number(totalProducts) || 0,
+        totalUsers: Number(totalUsers) || 0,
+        totalRevenue,
+      },
     })
   } catch (error) {
     next(error)
@@ -119,7 +149,15 @@ exports.getStats = async (req, res, next) => {
 exports.getAllProducts = async (req, res, next) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 })
-    res.json(products)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Products fetched successfully',
+      data: products,
+      meta: {
+        count: products.length,
+      },
+    })
   } catch (error) {
     next(error)
   }
@@ -130,8 +168,29 @@ exports.getAllProducts = async (req, res, next) => {
 // @access  Private (Admin)
 exports.createProduct = async (req, res, next) => {
   try {
-    const product = await Product.create(req.body)
-    res.status(201).json(product)
+    const { name, description, price, images, category, stock } = req.body
+
+    if (!name || price === undefined) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Product name and price are required',
+      })
+    }
+
+    const product = await Product.create({
+      name,
+      description,
+      price,
+      images,
+      category,
+      stock,
+    })
+
+    return sendResponse(res, 201, {
+      success: true,
+      message: 'Product created successfully',
+      data: product,
+    })
   } catch (error) {
     next(error)
   }
@@ -146,10 +205,19 @@ exports.updateProduct = async (req, res, next) => {
       new: true,
       runValidators: true,
     })
+
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' })
+      return sendResponse(res, 404, {
+        success: false,
+        message: 'Product not found',
+      })
     }
-    res.json(product)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Product updated successfully',
+      data: product,
+    })
   } catch (error) {
     next(error)
   }
@@ -161,10 +229,19 @@ exports.updateProduct = async (req, res, next) => {
 exports.deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id)
+
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' })
+      return sendResponse(res, 404, {
+        success: false,
+        message: 'Product not found',
+      })
     }
-    res.json({ message: 'Product deleted successfully' })
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Product deleted successfully',
+      data: { id: product._id },
+    })
   } catch (error) {
     next(error)
   }
@@ -184,7 +261,6 @@ exports.getAllOrders = async (req, res, next) => {
       sort = '-createdAt',
     } = req.query
 
-    // Build query
     const query = {}
 
     if (status) {
@@ -199,29 +275,32 @@ exports.getAllOrders = async (req, res, next) => {
       query.user = userId
     }
 
-    // Calculate pagination
-    const pageNum = parseInt(page)
-    const limitNum = parseInt(limit)
+    const pageNum = parseInt(page, 10) || 1
+    const limitNum = parseInt(limit, 10) || 10
     const skip = (pageNum - 1) * limitNum
 
-    // Execute query
-    const orders = await Order.find(query)
-      .populate('user', 'name email phone')
-      .populate('items.product', 'name price images')
-      .sort(sort)
-      .skip(skip)
-      .limit(limitNum)
+    const [orders, total] = await Promise.all([
+      Order.find(query)
+        .populate('user', 'name email phone')
+        .populate('items.product', 'name price images')
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum),
+      Order.countDocuments(query),
+    ])
 
-    // Get total count
-    const total = await Order.countDocuments(query)
+    const pages = Math.ceil(total / limitNum) || 1
 
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
-      count: orders.length,
-      total,
-      page: pageNum,
-      pages: Math.ceil(total / limitNum),
+      message: 'Orders fetched successfully',
       data: orders,
+      meta: {
+        total,
+        page: pageNum,
+        pages,
+        count: orders.length,
+      },
     })
   } catch (error) {
     next(error)
@@ -231,6 +310,7 @@ exports.getAllOrders = async (req, res, next) => {
 // @desc    Update order status
 // @route   PUT /api/admin/orders/:id
 // @access  Private (Admin)
+// COD: Admin can set paymentStatus to "paid" (collected on delivery) or "failed"
 exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { status, paymentStatus } = req.body
@@ -238,42 +318,56 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     const order = await Order.findById(orderId)
     if (!order) {
-      return res.status(404).json({
+      return sendResponse(res, 404, {
         success: false,
         message: 'Order not found',
       })
     }
 
-    // Validate status
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+    const validPaymentStatuses = ['pending', 'paid', 'failed']
+
     if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
       })
     }
 
-    // Validate payment status
-    const validPaymentStatuses = ['pending', 'paid', 'failed']
     if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
-      return res.status(400).json({
+      return sendResponse(res, 400, {
         success: false,
         message: `Invalid payment status. Must be one of: ${validPaymentStatuses.join(', ')}`,
       })
     }
 
-    // Update status
+    // Prevent invalid state transitions (simple rules)
+    const currentStatus = order.status
+    if (currentStatus === 'cancelled') {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Cannot update a cancelled order',
+      })
+    }
+    if (currentStatus === 'delivered' && status && status !== 'delivered') {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Cannot change status of a delivered order',
+      })
+    }
+
+    const previousStatus = order.status
+
     if (status) {
       order.status = status
     }
 
-    // Update payment status
     if (paymentStatus) {
       order.paymentStatus = paymentStatus
     }
 
-    // If order is cancelled, restore product stock
-    if (status === 'cancelled' && order.status !== 'cancelled') {
+    // If order is newly cancelled, restore product stock
+    if (status === 'cancelled' && previousStatus !== 'cancelled') {
       for (const item of order.items) {
         const product = await Product.findById(item.product)
         if (product) {
@@ -285,11 +379,10 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     await order.save()
 
-    // Populate before sending response
     await order.populate('user', 'name email')
     await order.populate('items.product', 'name price images')
 
-    res.json({
+    return sendResponse(res, 200, {
       success: true,
       message: 'Order status updated successfully',
       data: order,
@@ -305,7 +398,15 @@ exports.updateOrderStatus = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 })
-    res.json(users)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Users fetched successfully',
+      data: users,
+      meta: {
+        count: users.length,
+      },
+    })
   } catch (error) {
     next(error)
   }
@@ -316,14 +417,28 @@ exports.getAllUsers = async (req, res, next) => {
 // @access  Private (Admin)
 exports.updateUser = async (req, res, next) => {
   try {
+    // Prevent role escalation: do not allow role to be changed via this endpoint
+    if (req.body && Object.prototype.hasOwnProperty.call(req.body, 'role')) {
+      delete req.body.role
+    }
+
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     }).select('-password')
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' })
+      return sendResponse(res, 404, {
+        success: false,
+        message: 'User not found',
+      })
     }
-    res.json(user)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'User updated successfully',
+      data: user,
+    })
   } catch (error) {
     next(error)
   }
@@ -335,10 +450,19 @@ exports.updateUser = async (req, res, next) => {
 exports.deleteUser = async (req, res, next) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id)
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' })
+      return sendResponse(res, 404, {
+        success: false,
+        message: 'User not found',
+      })
     }
-    res.json({ message: 'User deleted successfully' })
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'User deleted successfully',
+      data: { id: user._id },
+    })
   } catch (error) {
     next(error)
   }
