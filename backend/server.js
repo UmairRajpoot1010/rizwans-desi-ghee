@@ -62,6 +62,9 @@ const startServer = async () => {
 
   } catch (error) {
     console.error('❌ Failed to start server:', error.message)
+    if (error.message?.includes('MongoDB')) {
+      console.error('   MongoDB connection failed. Check MONGODB_URI in .env')
+    }
     process.exit(1)
   }
 }

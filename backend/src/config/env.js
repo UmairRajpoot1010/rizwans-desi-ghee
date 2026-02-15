@@ -55,7 +55,8 @@ validateEnvVars()
 const config = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : (NODE_ENV === 'production' ? null : 5000),
   NODE_ENV,
-  MONGODB_URI: process.env.MONGODB_URI || (NODE_ENV === 'production' ? null : 'mongodb://localhost:27017/rizwans-desi-ghee'),
+  // MONGODB_URI must be set in .env - no hardcoded connection strings
+  MONGODB_URI: process.env.MONGODB_URI || null,
   JWT_SECRET: process.env.JWT_SECRET || (NODE_ENV === 'production' ? null : 'your-super-secret-jwt-key-change-in-production'),
   JWT_EXPIRE: process.env.JWT_EXPIRE || '7d',
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || (NODE_ENV === 'production' ? null : 'admin@rizwansdesighee.com'),
