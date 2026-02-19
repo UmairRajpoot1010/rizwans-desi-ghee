@@ -1,24 +1,55 @@
 import { Heart, Award, Users, Leaf, TrendingUp, Sprout } from 'lucide-react';
+import milk from '@/assets/milk.jpg';
+import cow from '@/assets/cow.jpg';
+
+// Video served from public folder
+const COW_VIDEO_SRC = '/cow-grazing.mp4';
+const FARM_VIDEO_SRC = '/farm.mp4';
+
+function getImageSrc(imp: { src?: string; default?: string } | string): string {
+  if (typeof imp === 'string') return imp;
+  return (imp as { src?: string }).src ?? (imp as { default?: string }).default ?? '';
+}
 
 export function AboutPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
-      {/* Hero Banner */}
-      <section className="relative h-[500px] overflow-hidden">
-        <img 
-          src="https://images.unsplash.com/photo-1664961118874-32d918343e7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB2aWxsYWdlJTIwZmFybSUyMG9yZ2FuaWN8ZW58MXx8fHwxNzY5ODUzNTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080" 
-          alt="Our Farm"
-          className="w-full h-full object-cover"
+      {/* Hero Banner – full-width background video */}
+      <section className="relative h-screen min-h-[100vh] w-full overflow-hidden">
+        {/* Background video – full cover, no controls, autoplay, loop, muted, playsInline */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden
+          src={COW_VIDEO_SRC}
+        >
+          <source src={COW_VIDEO_SRC} type="video/mp4" />
+        </video>
+        {/* Dark + golden gradient overlay for text readability and desi ghee theme */}
+        <div
+          className="absolute inset-0 z-10"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(43,52,30,0.75) 40%, rgba(107,74,30,0.7) 70%, rgba(0,0,0,0.6) 100%)',
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#6B4A1E]/90 to-[#5F6B3C]/80 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-5xl md:text-6xl mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Our Story
-            </h1>
-            <p className="text-xl md:text-2xl max-w-2xl mx-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
-              A Legacy of Purity, Tradition & Trust
-            </p>
-          </div>
+        {/* Centered content above video */}
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4">
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white text-center mb-4"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          >
+            Our Story
+          </h1>
+          <p
+            className="text-lg sm:text-xl md:text-2xl text-white/95 text-center max-w-2xl mx-auto"
+            style={{ fontFamily: 'Poppins, sans-serif' }}
+          >
+            A Legacy of Purity, Tradition & Trust
+          </p>
         </div>
       </section>
 
@@ -210,34 +241,56 @@ export function AboutPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="rounded-3xl overflow-hidden shadow-2xl">
+            <div className="rounded-3xl overflow-hidden shadow-2xl h-[320px]">
               <img 
-                src="https://images.unsplash.com/photo-1768850418251-17480117ac9b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmFkaXRpb25hbCUyMGZhcm0lMjBmcmVzaCUyMGRhaXJ5JTIwY293fGVufDF8fHx8MTc2OTg1MzU0OXww&ixlib=rb-4.1.0&q=80&w=1080" 
-                alt="Our Cows"
-                className="w-full h-[400px] object-cover"
+                src={getImageSrc(milk as { src?: string; default?: string })}
+                alt="Milk"
+                className="w-full h-full object-cover object-center rounded-xl"
               />
             </div>
-            <div className="rounded-3xl overflow-hidden shadow-2xl">
+            <div className="rounded-3xl overflow-hidden shadow-2xl h-[320px]">
               <img 
-                src="https://images.unsplash.com/photo-1664961118874-32d918343e7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB2aWxsYWdlJTIwZmFybSUyMG9yZ2FuaWN8ZW58MXx8fHwxNzY5ODUzNTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080" 
-                alt="Our Farm"
-                className="w-full h-[400px] object-cover"
+                src={getImageSrc(cow as { src?: string; default?: string })}
+                alt="Cow"
+                className="w-full h-full object-cover object-center rounded-xl"
               />
             </div>
           </div>
 
-          <div className="mt-12 bg-gradient-to-r from-[#5F6B3C] to-[#6B4A1E] rounded-3xl p-12 text-center text-white">
-            <h3 className="text-3xl mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Visit Our Farm
-            </h3>
-            <p className="text-white/90 text-lg mb-6 max-w-2xl mx-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
-              We welcome you to visit our farm and see firsthand how we make our pure desi ghee. 
-              Experience the traditional process and meet our happy cows!
-            </p>
-            <button className="px-8 py-4 bg-[#E6B65C] text-[#6B4A1E] rounded-full hover:bg-white transition-all" style={{ fontFamily: 'Poppins, sans-serif' }}>
-              Schedule a Visit
-            </button>
-          </div>
+          <section className="mt-12 relative rounded-3xl overflow-hidden min-h-[280px] flex items-center justify-center">
+            {/* Video background - absolute, full cover */}
+            <video
+              className="absolute inset-0 w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              aria-hidden
+              src={FARM_VIDEO_SRC}
+            >
+              <source src={FARM_VIDEO_SRC} type="video/mp4" />
+            </video>
+            {/* Dark overlay for text readability - rgba(0,0,0,0.5) */}
+            <div
+              className="absolute inset-0 z-[1]"
+              style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+              aria-hidden
+            />
+            {/* Content wrapper - relative, z-index above video */}
+            <div className="relative z-10 w-full p-8 sm:p-10 md:p-12 text-center text-white">
+              <h3 className="text-2xl sm:text-3xl mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+                Visit Our Farm
+              </h3>
+              <p className="text-white/90 text-base sm:text-lg mb-6 max-w-2xl mx-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                We welcome you to visit our farm and see firsthand how we make our pure desi ghee. 
+                Experience the traditional process and meet our happy cows!
+              </p>
+              <button className="px-8 py-4 bg-[#E6B65C] text-[#6B4A1E] rounded-full hover:bg-white transition-all" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                Schedule a Visit
+              </button>
+            </div>
+          </section>
         </div>
       </section>
 

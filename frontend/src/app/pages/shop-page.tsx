@@ -1,11 +1,17 @@
 import { useState } from 'react';
-import { ShoppingCart, Star, SlidersHorizontal } from 'lucide-react';
+import { Heart, ShoppingCart, Star, SlidersHorizontal } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
 import { products } from '@/app/data/products';
+import bottle500gm from '@/assets/500gm.jpeg';
+import bottle1kg from '@/assets/1kg.jpeg';
+import bottle2kg from '@/assets/2kg.jpeg';
+// Video served from public folder
+const COW_VIDEO_SRC = '/white-cow.mp4';
 
 export function ShopPage() {
-  const { setSelectedProduct, setCurrentPage, addToCart } = useApp();
+  const { setSelectedProduct, setCurrentPage, addToCart, addToFavourites, removeFromFavourites, isFavourite } = useApp();
   const [selectedWeight, setSelectedWeight] = useState<{ [key: number]: string }>({});
+  const [ratings, setRatings] = useState<{ [key: number]: number }>({});
   const [selectedFilters, setSelectedFilters] = useState({
     weights: [] as string[],
     priceRange: 'all',
@@ -13,7 +19,29 @@ export function ShopPage() {
   });
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  const weights = ['500g', '1kg', '2kg', '5kg'];
+  const weights = ['500g', '1kg', '2kg'];
+
+  // Helper function to get the correct bottle image based on weight
+  const getImageForWeight = (weight: string): string => {
+    const normalizedWeight = weight.toLowerCase().trim();
+    if (normalizedWeight === '500g' || normalizedWeight === '500gm') {
+      return bottle500gm.src;
+    } else if (normalizedWeight === '1kg') {
+      return bottle1kg.src;
+    } else if (normalizedWeight === '2kg') {
+      return bottle2kg.src;
+    }
+    return bottle500gm.src;
+  };
+
+  // Price by weight: 500g=1500, 1kg=3000, 2kg=6000
+  const getPriceForWeight = (weight: string): number => {
+    const normalizedWeight = weight.toLowerCase().trim();
+    if (normalizedWeight === '500g' || normalizedWeight === '500gm') return 1500;
+    if (normalizedWeight === '1kg') return 3000;
+    if (normalizedWeight === '2kg') return 6000;
+    return 1500;
+  };
   
   const handleViewProduct = (product: typeof products[0]) => {
     setSelectedProduct(product);
@@ -40,21 +68,40 @@ export function ShopPage() {
   };
 
   const filteredProducts = products.filter(product => {
-    if (selectedFilters.weights.length > 0 && !selectedFilters.weights.includes(product.weight)) {
-      return false;
+    if (selectedFilters.weights.length > 0) {
+      const normalizedProductWeight = product.weight.toLowerCase().trim();
+      const normalizedSelectedWeights = selectedFilters.weights.map(w =>
+        w.toLowerCase().trim()
+      );
+      if (!normalizedSelectedWeights.includes(normalizedProductWeight)) {
+        return false;
+      }
     }
     return true;
   });
 
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
-      {/* Page Header */}
-      <section className="bg-gradient-to-r from-[#5F6B3C] to-[#6B4A1E] py-16">
-        <div className="container mx-auto px-4 lg:px-8">
-          <h1 className="text-4xl md:text-5xl text-white text-center mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+      {/* Page Header with Video Background */}
+      <section className="relative w-full h-[70vh] overflow-hidden">
+        {/* Background Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute top-0 left-0 w-full h-full object-cover"
+        >
+          <source src={COW_VIDEO_SRC} type="video/mp4" />
+        </video>
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/40"></div>
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4 lg:px-8">
+          <h1 className="text-4xl md:text-5xl mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             Shop Pure Desi Ghee
           </h1>
-          <p className="text-white/90 text-center text-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>
+          <p className="mt-4 text-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>
             Choose from our range of premium quality products
           </p>
         </div>
@@ -212,32 +259,40 @@ export function ShopPage() {
               </div>
             </aside>
 
-            {/* Main Products Grid */}
-            <div className="lg:col-span-3">
-              <div className="mb-6 flex justify-between items-center">
-                <p className="text-[#6B4A1E]/70" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                  Showing {filteredProducts.length} products
-                </p>
-              </div>
-
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <div key={product.id} className="group bg-white rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-300 border border-[#E6B65C]/20">
+            {/* Main Products Grid - 3 products in one row */}
+                  <div className="lg:col-span-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {filteredProducts.slice(0, 3).map((product) => (
+                  <div key={product.id} className="group bg-white rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 border border-[#E6B65C]/20">
                     {/* Product Image */}
                     <div 
                       className="relative overflow-hidden bg-[#FAF7F2] p-6 cursor-pointer"
                       onClick={() => handleViewProduct(product)}
                     >
                       <img 
-                        src={product.image} 
+                        src={getImageForWeight(selectedWeight[product.id] || product.weight)} 
                         alt={product.name}
-                        className="w-full h-64 object-contain group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-80 object-contain group-hover:scale-110 group-hover:translate-y-1 transition-transform duration-500 ease-out"
                       />
                       {product.tag && (
                         <div className="absolute top-4 left-4 px-3 py-1 bg-[#E6B65C] text-white text-xs rounded-full" style={{ fontFamily: 'Poppins, sans-serif' }}>
                           {product.tag}
                         </div>
                       )}
+                      <button
+                        type="button"
+                        aria-label={isFavourite(product.id) ? 'Remove from favourites' : 'Add to favourites'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isFavourite(product.id)) removeFromFavourites(product.id);
+                          else addToFavourites(product);
+                        }}
+                        className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
+                      >
+                        <Heart
+                          className={`h-4 w-4 ${isFavourite(product.id) ? 'fill-[#E6B65C] text-[#E6B65C]' : ''}`}
+                        />
+                      </button>
                     </div>
 
                     {/* Product Info */}
@@ -253,16 +308,18 @@ export function ShopPage() {
 
                       {/* Rating */}
                       <div className="flex items-center gap-2">
-                        <div className="flex">
-                          {Array.from(
-                            { length: Math.max(0, Math.round(product.rating || 0)) },
-                            (_, i) => (
-                              <Star
-                                key={i}
-                                className="w-4 h-4 fill-[#E6B65C] text-[#E6B65C]"
-                              />
-                            )
-                          )}
+                        <div className="flex gap-1 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              onClick={() => setRatings(prev => ({ ...prev, [product.id]: star }))}
+                              className={`text-2xl transition-colors ${
+                                star <= (ratings[product.id] || 0) ? "text-yellow-500" : "text-gray-300"
+                              }`}
+                            >
+                              ★
+                            </span>
+                          ))}
                         </div>
                         <span
                           className="text-sm text-[#6B4A1E]/60"
@@ -272,10 +329,10 @@ export function ShopPage() {
                         </span>
                       </div>
 
-                      {/* Price */}
+                      {/* Price - by selected weight */}
                       <div>
                         <p className="text-2xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-                          PKR {product.price}
+                          PKR {getPriceForWeight(selectedWeight[product.id] || product.weight)}
                         </p>
                       </div>
 

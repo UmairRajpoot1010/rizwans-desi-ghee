@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Star, Minus, Plus, ShoppingCart, CheckCircle, Truck, CreditCard, Leaf } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
 import { products } from '@/app/data/products';
+import { ProductImageZoom } from '@/app/components/product-image-zoom';
 
 export function ProductDetailPage() {
   const { selectedProduct, addToCart, setCurrentPage } = useApp();
@@ -44,23 +45,25 @@ export function ProductDetailPage() {
       <div className="container mx-auto px-4 lg:px-8 py-12">
         {/* Main Product Section */}
         <div className="grid lg:grid-cols-2 gap-12 mb-16">
-          {/* Left - Product Images */}
+          {/* Left - Product Images with zoom magnifier */}
           <div className="space-y-4">
-            {/* Main Image */}
             <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#E6B65C]/20">
-              <img 
-                src={product.image} 
+              <ProductImageZoom
+                imageSrc={product.image}
+                zoomImageSrc={product.image}
                 alt={product.name}
-                className="w-full h-[500px] object-contain"
               />
             </div>
-            
+
             {/* Thumbnail Gallery */}
             <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="bg-white rounded-2xl p-4 border-2 border-[#E6B65C]/20 cursor-pointer hover:border-[#E6B65C] transition-colors">
-                  <img 
-                    src={product.image} 
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-4 border-2 border-[#E6B65C]/20 cursor-pointer hover:border-[#E6B65C] transition-colors"
+                >
+                  <img
+                    src={product.image}
                     alt={`${product.name} view ${i}`}
                     className="w-full h-20 object-contain"
                   />

@@ -24,7 +24,7 @@ export function ContactPage() {
   };
 
   const handleWhatsApp = () => {
-    window.open('https://wa.me/923001234567', '_blank');
+    window.open('https://wa.me/923287318269', '_blank');
   };
 
   return (
@@ -60,7 +60,7 @@ export function ContactPage() {
                 Chat with us instantly
               </p>
               <p className="text-lg text-[#5F6B3C]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                +92 300 1234567
+                +92-3287318269
               </p>
             </button>
 
@@ -76,7 +76,7 @@ export function ContactPage() {
                 Call us directly
               </p>
               <p className="text-lg text-[#5F6B3C] mb-1" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                +92 300 1234567
+                +92-3287318269
               </p>
               <p className="text-sm text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 Mon-Sat: 9AM - 7PM
@@ -214,9 +214,7 @@ export function ContactPage() {
                       Visit Our Farm
                     </h3>
                     <p className="text-[#6B4A1E]/70 leading-relaxed" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                      123 Farm Road, Village near Lahore<br />
-                      Lahore, Punjab<br />
-                      ZIP: 54000, Pakistan
+                      Adda bangla jalalpur road lodhran, Pakistan
                     </p>
                   </div>
                 </div>

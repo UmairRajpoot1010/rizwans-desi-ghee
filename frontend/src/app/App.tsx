@@ -2,6 +2,7 @@
 
 import { AppProvider, useApp } from './context/app-context';
 import { Header } from './components/header';
+import { AnnouncementBar } from './components/announcement-bar';
 import { Footer } from './components/footer';
 import { MobileBottomBar } from './components/mobile-bottom-bar';
 import { HomePage } from './pages/home-page';
@@ -11,6 +12,7 @@ import { CartPage } from './pages/cart-page';
 import { CheckoutPage } from './pages/checkout-page';
 import { AboutPage } from './pages/about-page';
 import { ContactPage } from './pages/contact-page';
+import { FavouritesPage } from './pages/favourites-page';
 
 function AppContent() {
   const { currentPage } = useApp();
@@ -31,6 +33,8 @@ function AppContent() {
         return <AboutPage />;
       case 'contact':
         return <ContactPage />;
+      case 'favourites':
+        return <FavouritesPage />;
       default:
         return <HomePage />;
     }
@@ -39,6 +43,8 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-[#FAF7F2]" style={{ fontFamily: 'Poppins, sans-serif' }}>
       <Header />
+      {/* Continuous sliding announcement bar directly below navbar (hide on home to not overlap hero) */}
+      {currentPage !== 'home' && <AnnouncementBar />}
       <main>
         {renderPage()}
       </main>

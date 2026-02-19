@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
-import { ArrowRight, ShoppingCart, Menu, X } from 'lucide-react';
+import { ArrowRight, Menu, ShoppingCart, X } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
 import logo from '@/assets/logo.png';
+import { NavbarIcons } from '@/app/components/navbar-icons';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -68,29 +69,20 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Cart Button */}
-        <button
-          onClick={() => navigate('cart')}
-          className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E6B65C] text-[#6B4A1E] font-semibold shadow-md transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-        >
-          <span className="relative inline-flex items-center">
-            <ShoppingCart size={18} />
-            {cartItemCount > 0 && (
-              <span className="absolute -top-2 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#5F6B3C] px-1 text-[10px] font-semibold text-white">
-                {cartItemCount}
-              </span>
-            )}
-          </span>
-          <span className="text-sm">Cart</span>
-        </button>
+        {/* Right-side action icons (desktop) + mobile menu */}
+        <div className="flex items-center">
+          <NavbarIcons onNavigate={navigate} />
 
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden text-[#6B4A1E]"
-        >
-          {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
-        </button>
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden text-[#6B4A1E]"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            type="button"
+          >
+            {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}

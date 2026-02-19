@@ -5,6 +5,7 @@ import { useApp } from '@/app/context/app-context';
 export function CheckoutPage() {
   const { cart, setCurrentPage } = useApp();
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -233,8 +234,40 @@ export function CheckoutPage() {
                           </h3>
                         </div>
                         <p className="text-sm text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                          Pay securely using UPI, Card, or Net Banking
+                          Pay online via bank transfer and upload your payment proof
                         </p>
+
+                        {paymentMethod === 'online' && (
+                          <div className="mt-4 space-y-4">
+                            <div className="rounded-2xl bg-[#FAF7F2] border border-[#E6B65C]/40 p-4 text-sm text-[#6B4A1E]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                              <p className="font-semibold mb-1">Account Details</p>
+                              <p>MUHAMMAD RIZWAN</p>
+                              <p>60010106902027</p>
+                              <p>PK49MEZN0060010106902027</p>
+                              <p>LODHRAN BRANCH</p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="block text-[#6B4A1E]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                                Upload payment screenshot
+                              </label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] ?? null;
+                                  setPaymentScreenshot(file);
+                                }}
+                                className="w-full cursor-pointer rounded-2xl border border-[#E6B65C]/30 bg-[#FAF7F2] px-4 py-3 text-sm text-[#6B4A1E] file:mr-4 file:rounded-full file:border-0 file:bg-[#5F6B3C] file:px-4 file:py-2 file:text-xs file:font-semibold file:uppercase file:text-white hover:border-[#5F6B3C]"
+                              />
+                              {paymentScreenshot && (
+                                <p className="text-xs text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                                  Selected file: {paymentScreenshot.name}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       {paymentMethod === 'online' && (
                         <CheckCircle className="w-6 h-6 text-[#5F6B3C]" />
