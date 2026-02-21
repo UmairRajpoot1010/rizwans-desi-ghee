@@ -49,9 +49,7 @@ You can create batch scripts to start all services at once.
    - Windows Service: MongoDB should start automatically
    - Manual: Run `mongod` in a terminal
 
-3. **Update connection string** in `backend/.env`:
-   ```
-   MONGODB_URI=mongodb://localhost:27017/rizwans-desi-ghee
+
    ```
 
 ### Using MongoDB Atlas (Cloud):
@@ -60,7 +58,7 @@ You can create batch scripts to start all services at once.
 3. Get connection string
 4. Update `backend/.env`:
    ```
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/rizwans-desi-ghee
+  
    ```
 
 ## Verify Setup
@@ -76,11 +74,7 @@ You can create batch scripts to start all services at once.
    curl http://localhost:5000/
    ```
 
-## Default Admin Credentials
 
-After first run, you can login with:
-- **Email**: admin@rizwansdesighee.com
-- **Password**: admin123
 
 **⚠️ Important**: Change these credentials in production!
 
