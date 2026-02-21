@@ -16,6 +16,8 @@ type ProductImage3DProps = Omit<ImageProps, 'style'> & {
 export function ProductImage3D({
   maxTilt = 10,
   className,
+  src,
+  alt,
   ...imageProps
 }: ProductImage3DProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -105,7 +107,9 @@ export function ProductImage3D({
         className="relative transition-transform duration-500 ease-out"
       >
         <Image
-          {...(imageProps as ImageProps)}
+          src={src}
+          alt={alt}
+          {...(imageProps as Omit<ImageProps, 'src' | 'alt'>)}
           className={`h-auto max-h-[420px] w-auto object-contain select-none pointer-events-none drop-shadow-xl ${className ?? ''}`}
         />
       </div>
