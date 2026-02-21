@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
+import { authApi } from '@/lib/api';
 
 type Mode = 'login' | 'signup';
 
@@ -170,6 +171,22 @@ export function AuthPanel({ open, mode, onClose, onModeChange }: Props) {
     }
   };
 
+  const onGoogleSignIn = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    if (!clientId) {
+      setFormError('Google sign-in is not configured')
+      return
+    }
+    const redirectUri = `${window.location.origin}/google-callback`
+    const nonce = Math.random().toString(36).slice(2)
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+      clientId
+    )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=${encodeURIComponent(
+      'openid email profile'
+    )}&nonce=${nonce}&prompt=select_account`
+    window.open(url, '_self')
+  }
+
   return (
     <div
       className={[
@@ -311,6 +328,19 @@ export function AuthPanel({ open, mode, onClose, onModeChange }: Props) {
               >
                 {mode === 'login' ? (loading ? 'Signing In…' : 'Sign In') : loading ? 'Creating…' : 'Create Account'}
               </button>
+
+              {mode === 'login' && (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={onGoogleSignIn}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 px-4 py-3 text-sm bg-white"
+                  >
+                    <span className="w-4 h-4 inline-flex items-center justify-center rounded-full bg-white text-sm font-bold">G</span>
+                    Continue with Google
+                  </button>
+                </div>
+              )}
 
               <div className="pt-4 text-center text-sm text-neutral-700">
                 {mode === 'login' ? (

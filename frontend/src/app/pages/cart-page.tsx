@@ -50,31 +50,31 @@ export function CartPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
       {/* Page Header */}
-      <section className="bg-gradient-to-r from-[#5F6B3C] to-[#6B4A1E] py-16">
+      <section className="bg-gradient-to-r from-[#5F6B3C] to-[#6B4A1E] py-8 md:py-16">
         <div className="container mx-auto px-4 lg:px-8">
-          <h1 className="text-4xl md:text-5xl text-white text-center mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+          <h1 className="text-3xl md:text-5xl text-white text-center mb-2 md:mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
             Shopping Cart
           </h1>
-          <p className="text-white/90 text-center text-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>
+          <p className="text-white/90 text-center text-base md:text-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>
             {cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart
           </p>
         </div>
       </section>
 
       {/* Cart Content */}
-      <section className="py-12">
+      <section className="py-6 md:py-12">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Product List */}
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item) => (
                 <div 
                   key={`${item.id}-${item.selectedWeight}`}
-                  className="bg-white rounded-3xl p-6 shadow-lg border border-[#E6B65C]/20"
+                  className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-lg border border-[#E6B65C]/20"
                 >
-                  <div className="flex gap-6">
+                  <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
                     {/* Product Image */}
-                    <div className="w-32 h-32 bg-[#FAF7F2] rounded-2xl p-4 flex-shrink-0">
+                    <div className="w-full sm:w-24 md:w-32 h-24 md:h-32 bg-[#FAF7F2] rounded-lg md:rounded-2xl p-3 md:p-4 flex-shrink-0">
                       <img 
                         src={item.image} 
                         alt={item.name}
@@ -83,42 +83,42 @@ export function CartPage() {
                     </div>
 
                     {/* Product Info */}
-                    <div className="flex-1 space-y-3">
+                    <div className="flex-1 space-y-2 md:space-y-3">
                       <div>
-                        <h3 className="text-xl text-[#6B4A1E] mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        <h3 className="text-lg md:text-xl text-[#6B4A1E]" style={{ fontFamily: 'Playfair Display, serif' }}>
                           {item.name}
                         </h3>
-                        <p className="text-sm text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                        <p className="text-xs md:text-sm text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
                           Weight: {item.selectedWeight}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         {/* Quantity Selector */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => updateQuantity(item.id, item.selectedWeight, item.quantity - 1)}
                             className="w-8 h-8 bg-[#FAF7F2] rounded-full border border-[#E6B65C]/20 flex items-center justify-center hover:bg-white transition-colors"
                           >
-                            <Minus className="w-4 h-4 text-[#6B4A1E]" />
+                            <Minus className="w-3 h-3 md:w-4 md:h-4 text-[#6B4A1E]" />
                           </button>
-                          <span className="text-lg text-[#6B4A1E] w-8 text-center" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                          <span className="text-base md:text-lg text-[#6B4A1E] w-8 text-center" style={{ fontFamily: 'Poppins, sans-serif' }}>
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, item.selectedWeight, item.quantity + 1)}
                             className="w-8 h-8 bg-[#FAF7F2] rounded-full border border-[#E6B65C]/20 flex items-center justify-center hover:bg-white transition-colors"
                           >
-                            <Plus className="w-4 h-4 text-[#6B4A1E]" />
+                            <Plus className="w-3 h-3 md:w-4 md:h-4 text-[#6B4A1E]" />
                           </button>
                         </div>
 
                         {/* Price */}
-                        <div className="text-right">
-                          <p className="text-2xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        <div className="text-right sm:text-left">
+                          <p className="text-xl md:text-2xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
                             PKR {item.price * item.quantity}
                           </p>
-                          <p className="text-sm text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                          <p className="text-xs md:text-sm text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
                             PKR {item.price} each
                           </p>
                         </div>
@@ -127,10 +127,10 @@ export function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={() => removeFromCart(item.id, item.selectedWeight)}
-                        className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+                        className="flex items-center gap-2 text-xs md:text-sm text-red-600 hover:text-red-700 transition-colors pt-2"
                         style={{ fontFamily: 'Poppins, sans-serif' }}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                         Remove
                       </button>
                     </div>
@@ -141,13 +141,13 @@ export function CartPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-3xl p-8 shadow-lg border border-[#E6B65C]/20 sticky top-24">
-                <h2 className="text-2xl text-[#6B4A1E] mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>
+              <div className="bg-white rounded-2xl md:rounded-3xl p-6 md:p-8 shadow-lg border border-[#E6B65C]/20 sticky top-20 md:top-24">
+                <h2 className="text-xl md:text-2xl text-[#6B4A1E] mb-4 md:mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>
                   Order Summary
                 </h2>
 
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between">
+                <div className="space-y-3 md:space-y-4 mb-6">
+                  <div className="flex justify-between text-sm md:text-base">
                     <span className="text-[#6B4A1E]/70" style={{ fontFamily: 'Poppins, sans-serif' }}>
                       Subtotal
                     </span>
@@ -156,7 +156,7 @@ export function CartPage() {
                     </span>
                   </div>
 
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm md:text-base">
                     <span className="text-[#6B4A1E]/70" style={{ fontFamily: 'Poppins, sans-serif' }}>
                       Delivery Charges
                     </span>
@@ -166,17 +166,17 @@ export function CartPage() {
                   </div>
 
                   {subtotal < 2000 && (
-                    <p className="text-xs text-[#5F6B3C] bg-[#E6B65C]/10 p-3 rounded-xl" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    <p className="text-xs md:text-sm text-[#5F6B3C] bg-[#E6B65C]/10 p-2 md:p-3 rounded-xl" style={{ fontFamily: 'Poppins, sans-serif' }}>
                       Add PKR {2000 - subtotal} more to get FREE delivery!
                     </p>
                   )}
 
-                  <div className="border-t border-[#E6B65C]/20 pt-4">
+                  <div className="border-t border-[#E6B65C]/20 pt-3 md:pt-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-xl text-[#6B4A1E]" style={{ fontFamily: 'Playfair Display, serif' }}>
+                      <span className="text-lg md:text-xl text-[#6B4A1E]" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Total
                       </span>
-                      <span className="text-3xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
+                      <span className="text-2xl md:text-3xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
                         PKR {total}
                       </span>
                     </div>
@@ -185,16 +185,16 @@ export function CartPage() {
 
                 <button
                   onClick={handleProceedToCheckout}
-                  className="w-full flex items-center justify-center gap-2 py-4 bg-[#5F6B3C] text-white rounded-full hover:bg-[#6B4A1E] transition-all shadow-lg mb-4"
+                  className="w-full flex items-center justify-center gap-2 py-3 md:py-4 bg-[#5F6B3C] text-white rounded-full hover:bg-[#6B4A1E] transition-all shadow-lg mb-4 text-sm md:text-base"
                   style={{ fontFamily: 'Poppins, sans-serif' }}
                 >
                   Proceed to Checkout
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
 
                 <button
                   onClick={handleContinueShopping}
-                  className="w-full py-4 bg-white text-[#6B4A1E] rounded-full border-2 border-[#E6B65C] hover:bg-[#E6B65C]/10 transition-all"
+                  className="w-full py-3 md:py-4 bg-white text-[#6B4A1E] rounded-full border-2 border-[#E6B65C] hover:bg-[#E6B65C]/10 transition-all text-sm md:text-base"
                   style={{ fontFamily: 'Poppins, sans-serif' }}
                 >
                   Continue Shopping

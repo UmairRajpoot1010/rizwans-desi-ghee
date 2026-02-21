@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Heart, Search, ShoppingCart, User } from 'lucide-react';
+import { Heart, ShoppingCart, User } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
 import { AuthPanel } from '@/app/components/auth-panel';
 
@@ -46,36 +46,30 @@ export function NavbarIcons({ onNavigate }: Props) {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [cartOpen, setCartOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
-
-  const searchButtonRef = useRef<HTMLButtonElement>(null);
-  const searchPanelRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const userButtonRef = useRef<HTMLButtonElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const cartPanelRef = useRef<HTMLDivElement>(null);
 
   // Close popovers on outside click.
   useOnClickOutside(
-    [searchButtonRef, searchPanelRef],
-    () => setSearchOpen(false),
-    searchOpen
-  );
-  useOnClickOutside(
     [cartButtonRef, cartPanelRef],
     () => setCartOpen(false),
     cartOpen
   );
 
+  // Close user menu when clicking outside
+  useOnClickOutside([userButtonRef, userMenuRef], () => setUserMenuOpen(false), userMenuOpen);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       // ESC closes any open overlay/popup.
-      setSearchOpen(false);
       setAuthOpen(false);
       setCartOpen(false);
     };
@@ -84,108 +78,30 @@ export function NavbarIcons({ onNavigate }: Props) {
   }, []);
 
   useEffect(() => {
-    // Important: autofocus the search input when it opens.
-    if (!searchOpen) return;
-    const id = window.setTimeout(() => searchInputRef.current?.focus(), 0);
-    return () => window.clearTimeout(id);
-  }, [searchOpen]);
-
-  useEffect(() => {
     // Ensure only one overlay is open at a time for clean UX.
-    if (searchOpen) {
-      setAuthOpen(false);
-      setCartOpen(false);
-    }
-  }, [searchOpen]);
-  useEffect(() => {
     if (authOpen) {
-      setSearchOpen(false);
       setCartOpen(false);
     }
   }, [authOpen]);
   useEffect(() => {
     if (cartOpen) {
-      setSearchOpen(false);
       setAuthOpen(false);
     }
   }, [cartOpen]);
 
-  const onSearchToggle = () => setSearchOpen((v) => !v);
-  const onCartToggle = () => setCartOpen((v) => !v);
-
   return (
     <div className="relative hidden md:flex items-center gap-4">
-      {/* Search */}
-      <div className="relative">
-        <button
-          ref={searchButtonRef}
-          type="button"
-          aria-label="Search"
-          aria-haspopup="dialog"
-          aria-expanded={searchOpen}
-          onClick={onSearchToggle}
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-800 transition-transform duration-200 hover:scale-105 hover:text-[#F4B400]"
-        >
-          <Search className="h-5 w-5" />
-        </button>
-
-        {/* Inline dropdown (matches reference: appears below navbar area) */}
-        <div
-          ref={searchPanelRef}
-          role="dialog"
-          aria-label="Search"
-          className={[
-            'absolute right-0 top-[calc(100%+10px)] w-[320px] rounded-xl border border-neutral-200 bg-white shadow-lg',
-            'origin-top-right transition-all duration-200',
-            searchOpen
-              ? 'pointer-events-auto scale-100 opacity-100 translate-y-0'
-              : 'pointer-events-none scale-95 opacity-0 -translate-y-1',
-          ].join(' ')}
-        >
-          <div className="p-3">
-            <input
-              ref={searchInputRef}
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search products…"
-              className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none ring-0 placeholder:text-neutral-400 focus:border-neutral-300"
-            />
-            <div className="mt-2 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchValue('');
-                  setSearchOpen(false);
-                }}
-                className="text-xs font-medium text-neutral-600 hover:text-neutral-900"
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(false)}
-                className="text-xs font-medium text-neutral-600 hover:text-neutral-900"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* User menu */}
       <div className="relative">
         <button
           ref={userButtonRef}
           type="button"
           aria-label={isAuthenticated ? `Account (${user?.name ?? 'User'})` : 'Login / Sign up'}
-          aria-haspopup="dialog"
-          aria-expanded={authOpen}
+          aria-haspopup="menu"
+          aria-expanded={userMenuOpen}
           onClick={() => {
-            // If logged in, clicking the icon signs out (simple UX for now).
-            // You can swap this to a dropdown later if you want.
             if (isAuthenticated) {
-              logout();
+              setUserMenuOpen((v) => !v);
               return;
             }
             setAuthMode('login');
@@ -193,8 +109,49 @@ export function NavbarIcons({ onNavigate }: Props) {
           }}
           className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-800 transition-transform duration-200 hover:scale-105 hover:text-[#F4B400]"
         >
-          <User className="h-5 w-5" />
+          {isAuthenticated ? (
+            <div className="h-5 w-5 rounded-full bg-[#5F6B3C] flex items-center justify-center text-white text-xs font-semibold">
+              {user?.name?.[0]?.toUpperCase() || 'U'}
+            </div>
+          ) : (
+            <User className="h-5 w-5" />
+          )}
         </button>
+
+        {/* User dropdown for authenticated users */}
+        <div
+          ref={userMenuRef}
+          className={[
+            'absolute right-0 top-[calc(100%+8px)] w-44 rounded-lg border border-neutral-200 bg-white shadow-lg',
+            'origin-top-right transition-all duration-150',
+            userMenuOpen ? 'pointer-events-auto scale-100 opacity-100 translate-y-0' : 'pointer-events-none scale-95 opacity-0 -translate-y-1',
+          ].join(' ')}
+        >
+          <div className="p-2">
+            <button
+              type="button"
+              onClick={() => {
+                setUserMenuOpen(false);
+                // navigate to profile
+                // `onNavigate` prop comes from Header
+                onNavigate('profile');
+              }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-50"
+            >
+              Profile
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUserMenuOpen(false);
+                logout();
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-neutral-50"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Slide-in Auth panel (Login/Signup) */}
@@ -223,7 +180,7 @@ export function NavbarIcons({ onNavigate }: Props) {
         aria-label="Cart"
         aria-haspopup="dialog"
         aria-expanded={cartOpen}
-        onClick={onCartToggle}
+        onClick={() => setCartOpen((v) => !v)}
         className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-800 transition-transform duration-200 hover:scale-105 hover:text-[#F4B400]"
       >
         <ShoppingCart className="h-5 w-5" />

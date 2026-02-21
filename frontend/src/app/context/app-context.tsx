@@ -1,9 +1,11 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { authApi, getErrorMessage } from '@/lib/api';
+import { AxiosError } from 'axios';
 
 export type Product = {
-  id: number;
+  id: string;
   name: string;
   weight: string;
   price: number;
@@ -20,15 +22,10 @@ export type CartItem = Product & {
 };
 
 export type AuthUser = {
+  id?: string;
   name: string;
   email: string;
-};
-
-type StoredUser = {
-  name: string;
-  email: string;
-  // Placeholder only. Replace with backend auth (hashed passwords) later.
-  password: string;
+  role?: string;
 };
 
 type AuthResult =
@@ -38,21 +35,24 @@ type AuthResult =
 type AppContextType = {
   currentPage: string;
   setCurrentPage: (page: string) => void;
+  selectedOrderId: string | null;
+  setSelectedOrderId: (id: string | null) => void;
   cart: CartItem[];
   addToCart: (product: Product, quantity: number, weight: string) => void;
-  removeFromCart: (id: number, weight: string) => void;
-  updateQuantity: (id: number, weight: string, quantity: number) => void;
+  removeFromCart: (id: string, weight: string) => void;
+  updateQuantity: (id: string, weight: string, quantity: number) => void;
+  clearCart: () => void;
   selectedProduct: Product | null;
   setSelectedProduct: (product: Product | null) => void;
 
   favourites: Product[];
   addToFavourites: (product: Product) => void;
-  removeFromFavourites: (productId: number) => void;
-  isFavourite: (productId: number) => boolean;
+  removeFromFavourites: (productId: string) => void;
+  isFavourite: (productId: string) => boolean;
 
-  // Auth (local placeholder, easy to replace with backend later)
   user: AuthUser | null;
   isAuthenticated: boolean;
+  authLoading: boolean;
   login: (email: string, password: string) => Promise<AuthResult>;
   signup: (name: string, email: string, password: string) => Promise<AuthResult>;
   logout: () => void;
@@ -60,10 +60,8 @@ type AppContextType = {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  users: 'rdg_users_v1',
-  session: 'rdg_session_v1',
-} as const;
+const TOKEN_KEY = 'rdg_token';
+const USER_KEY = 'rdg_user';
 
 function safeParseJSON<T>(value: string | null, fallback: T): T {
   if (!value) return fallback;
@@ -76,12 +74,13 @@ function safeParseJSON<T>(value: string | null, fallback: T): T {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState('home');
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [favourites, setFavourites] = useState<Product[]>([]);
 
-  // Auth state
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const isAuthenticated = !!user;
 
   const addToFavourites = (product: Product) => {
@@ -90,116 +89,155 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const removeFromFavourites = (productId: number) => {
+  const removeFromFavourites = (productId: string) => {
     setFavourites((prev) => prev.filter((p) => p.id !== productId));
   };
 
-  const isFavourite = (productId: number) =>
+  const isFavourite = (productId: string) =>
     favourites.some((p) => p.id === productId);
 
-  // Load session on mount (keeps user logged in after refresh).
+  // Restore session from token on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const sessionEmail = safeParseJSON<string | null>(
-      window.localStorage.getItem(STORAGE_KEYS.session),
-      null
-    );
-    if (!sessionEmail) return;
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
 
-    const users = safeParseJSON<StoredUser[]>(
-      window.localStorage.getItem(STORAGE_KEYS.users),
-      []
-    );
-    const found = users.find((u) => u.email.toLowerCase() === sessionEmail.toLowerCase());
-    if (found) setUser({ name: found.name, email: found.email });
+    authApi
+      .getMe()
+      .then((res) => {
+        const payload = res.data;
+        if (payload?.success && payload?.data) {
+          const u = payload.data;
+          const id = (u as { _id?: string; id?: string })?._id ?? (u as { id?: string })?.id;
+          const name = (u as { name?: string })?.name ?? '';
+          const email = (u as { email?: string })?.email ?? '';
+          const role = (u as { role?: string })?.role;
+          setUser({ id, name, email, role });
+          localStorage.setItem(USER_KEY, JSON.stringify({ id, name, email, role }));
+        } else {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+      })
+      .finally(() => setAuthLoading(false));
   }, []);
 
-  const authApi = useMemo(() => {
-    const readUsers = (): StoredUser[] => {
-      if (typeof window === 'undefined') return [];
-      return safeParseJSON<StoredUser[]>(
-        window.localStorage.getItem(STORAGE_KEYS.users),
-        []
-      );
-    };
-
-    const writeUsers = (users: StoredUser[]) => {
-      if (typeof window === 'undefined') return;
-      window.localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-    };
-
-    const setSession = (email: string | null) => {
-      if (typeof window === 'undefined') return;
-      if (!email) {
-        window.localStorage.removeItem(STORAGE_KEYS.session);
-        return;
-      }
-      window.localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(email));
-    };
-
-    return {
-      login: async (email: string, password: string): Promise<AuthResult> => {
-        const users = readUsers();
-        const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-        if (!found || found.password !== password) {
-          return { ok: false, message: 'Invalid email or password.' };
-        }
-        setUser({ name: found.name, email: found.email });
-        setSession(found.email);
-        return { ok: true, user: { name: found.name, email: found.email } };
-      },
-      signup: async (name: string, email: string, password: string): Promise<AuthResult> => {
-        const users = readUsers();
-        const exists = users.some((u) => u.email.toLowerCase() === email.toLowerCase());
-        if (exists) {
-          return { ok: false, message: 'An account with this email already exists.' };
-        }
-        const next: StoredUser = { name, email, password };
-        writeUsers([...users, next]);
-        setUser({ name, email });
-        setSession(email);
-        return { ok: true, user: { name, email } };
-      },
-      logout: () => {
+  const login = useMemo(
+    () =>
+      async (email: string, password: string): Promise<AuthResult> => {
+        try {
+          const res = await authApi.login(email, password);
+          const payload = res.data;
+          if (!payload?.success || !payload?.data) {
         setUser(null);
-        setSession(null);
+        if (typeof window !== 'undefined') {
+          // Redirect to home page after sign out
+          window.location.href = '/';
+        }
+          }
+          const { token, user: u } = payload.data;
+          if (!token || !u) {
+            return { ok: false, message: 'Invalid response from server' };
+          }
+          const id = (u as { id?: string })?.id ?? '';
+          const name = (u as { name?: string })?.name ?? '';
+          const em = (u as { email?: string })?.email ?? '';
+          const role = (u as { role?: string })?.role;
+          const authUser: AuthUser = { id, name, email: em, role };
+          localStorage.setItem(TOKEN_KEY, token);
+          localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+          setUser(authUser);
+          return { ok: true, user: authUser };
+        } catch (err) {
+          const msg = err instanceof AxiosError ? getErrorMessage(err) : 'Login failed';
+          return { ok: false, message: msg };
+        }
       },
-    };
-  }, []);
+    []
+  );
+
+  const signup = useMemo(
+    () =>
+      async (name: string, email: string, password: string): Promise<AuthResult> => {
+        try {
+          const res = await authApi.register(name, email, password);
+          const payload = res.data;
+          if (!payload?.success || !payload?.data) {
+            return { ok: false, message: payload?.message ?? 'Registration failed' };
+          }
+          const { token, user: u } = payload.data;
+          if (!token || !u) {
+            return { ok: false, message: 'Invalid response from server' };
+          }
+          const id = (u as { id?: string })?.id ?? '';
+          const n = (u as { name?: string })?.name ?? name;
+          const em = (u as { email?: string })?.email ?? email;
+          const role = (u as { role?: string })?.role;
+          const authUser: AuthUser = { id, name: n, email: em, role };
+          localStorage.setItem(TOKEN_KEY, token);
+          localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+          setUser(authUser);
+          return { ok: true, user: authUser };
+        } catch (err) {
+          const msg = err instanceof AxiosError ? getErrorMessage(err) : 'Registration failed';
+          return { ok: false, message: msg };
+        }
+      },
+    []
+  );
+
+  const logout = useMemo(
+    () =>
+      (): void => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+        }
+        setUser(null);
+      },
+    []
+  );
 
   const addToCart = (product: Product, quantity: number, weight: string) => {
-    setCart(prevCart => {
+    setCart((prevCart) => {
       const existingItem = prevCart.find(
-        item => item.id === product.id && item.selectedWeight === weight
+        (item) => item.id === product.id && item.selectedWeight === weight
       );
-      
+
       if (existingItem) {
-        return prevCart.map(item =>
+        return prevCart.map((item) =>
           item.id === product.id && item.selectedWeight === weight
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      
+
       return [...prevCart, { ...product, quantity, selectedWeight: weight }];
     });
   };
 
-  const removeFromCart = (id: number, weight: string) => {
-    setCart(prevCart => prevCart.filter(
-      item => !(item.id === id && item.selectedWeight === weight)
-    ));
+  const removeFromCart = (id: string, weight: string) => {
+    setCart((prevCart) =>
+      prevCart.filter((item) => !(item.id === id && item.selectedWeight === weight))
+    );
   };
 
-  const updateQuantity = (id: number, weight: string, quantity: number) => {
-    if (quantity === 0) {
+  const updateQuantity = (id: string, weight: string, quantity: number) => {
+    if (quantity <= 0) {
       removeFromCart(id, weight);
       return;
     }
-    
-    setCart(prevCart =>
-      prevCart.map(item =>
+
+    setCart((prevCart) =>
+      prevCart.map((item) =>
         item.id === id && item.selectedWeight === weight
           ? { ...item, quantity }
           : item
@@ -207,15 +245,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const clearCart = () => setCart([]);
+
   return (
     <AppContext.Provider
       value={{
         currentPage,
         setCurrentPage,
+        selectedOrderId,
+        setSelectedOrderId,
         cart,
         addToCart,
         removeFromCart,
         updateQuantity,
+        clearCart,
         selectedProduct,
         setSelectedProduct,
 
@@ -226,9 +269,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         user,
         isAuthenticated,
-        login: authApi.login,
-        signup: authApi.signup,
-        logout: authApi.logout,
+        authLoading,
+        login,
+        signup,
+        logout,
       }}
     >
       {children}

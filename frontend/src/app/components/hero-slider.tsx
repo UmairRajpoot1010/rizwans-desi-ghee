@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useApp } from '@/app/context/app-context';
-import hero1 from '@/assets/hero1.jpeg';
+import hero1 from '@/assets/hero1.png';
 import hero4 from '@/assets/hero4.png';
 import hero3 from '@/assets/hero3.jpeg';
 
@@ -65,7 +65,7 @@ export function HeroSlider() {
     if (isPaused) return;
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % slides.length);
-    }, 3000);
+    }, 4000);
     return () => clearInterval(interval);
   }, [isPaused]);
 
@@ -166,14 +166,12 @@ export function HeroSlider() {
                     style={{ transform: fgTransform }}
                   >
                     <div className="flex flex-col items-center space-y-1 sm:space-y-2 max-w-2xl">
-                      <h1 className="hero-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-wide" style={{ color: '#7B4A2E', fontFamily: 'Playfair Display, serif' }}>
-                        RIZWAN&apos;s
+                      <h1 className="hero-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-wide" style={{ color: '#ffffff', fontFamily: 'Playfair Display, serif' }}>
+                       A taste of tradition in every drop
                       </h1>
-                      <h1 className="hero-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-wide" style={{ color: '#7B4A2E', fontFamily: 'Playfair Display, serif' }}>
-                        PURE DESI GHEE
-                      </h1>
-                      <p className="hero-subheading text-sm sm:text-base md:text-lg" style={{ color: '#7B4A2E', fontFamily: 'Poppins, sans-serif' }}>
-                        Taste , Tradition, Feel the purity
+                     
+                      <p className="hero-subheading text-sm sm:text-base md:text-lg" style={{ color: '#ffffff', fontFamily: 'Poppins, sans-serif' }}>
+                        Feel the purity
                       </p>
                     </div>
                   </div>

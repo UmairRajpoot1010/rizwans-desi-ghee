@@ -10,12 +10,14 @@ import { ShopPage } from './pages/shop-page';
 import { ProductDetailPage } from './pages/product-detail-page';
 import { CartPage } from './pages/cart-page';
 import { CheckoutPage } from './pages/checkout-page';
+import { ProfilePage } from './pages/profile-page';
 import { AboutPage } from './pages/about-page';
 import { ContactPage } from './pages/contact-page';
 import { FavouritesPage } from './pages/favourites-page';
+import { OrderDetailPage } from './pages/order-detail-page';
 
 function AppContent() {
-  const { currentPage } = useApp();
+  const { currentPage, selectedOrderId } = useApp();
 
   const renderPage = () => {
     switch (currentPage) {
@@ -35,6 +37,10 @@ function AppContent() {
         return <ContactPage />;
       case 'favourites':
         return <FavouritesPage />;
+      case 'profile':
+        return <ProfilePage />;
+      case 'order-detail':
+        return selectedOrderId ? <OrderDetailPage orderId={selectedOrderId} /> : <ProfilePage />;
       default:
         return <HomePage />;
     }

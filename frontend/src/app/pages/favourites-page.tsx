@@ -3,14 +3,6 @@
 import { useApp } from '@/app/context/app-context';
 import { ShoppingBag } from 'lucide-react';
 
-function getPriceForWeight(weight: string): number {
-  const w = weight.toLowerCase().trim();
-  if (w === '500g' || w === '500gm') return 1500;
-  if (w === '1kg') return 3000;
-  if (w === '2kg') return 6000;
-  return 1500;
-}
-
 export function FavouritesPage() {
   const { favourites, removeFromFavourites, setSelectedProduct, setCurrentPage } = useApp();
 
@@ -63,7 +55,7 @@ export function FavouritesPage() {
                       {product.description}
                     </p>
                     <p className="text-2xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-                      PKR {getPriceForWeight(product.weight)}
+                      PKR {product.price}
                     </p>
                     <div className="flex gap-3">
                       <button

@@ -3,32 +3,34 @@
 import { useMemo, useState } from 'react';
 import { Heart, Share2 } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
-import { products } from '@/app/data/products';
+import { useProducts } from '@/hooks/use-products';
 import { ProductImageSlider } from '@/app/components/product-image-slider';
+import bottle500g from '@/assets/500g (2).png';
+import bottle1kg from '@/assets/1KG.png';
+import bottle2kg from '@/assets/2KG.png';
 
 const WEIGHT_OPTIONS = [
-  { id: '500g', label: '500g', price: 1500 },
-  { id: '1kg', label: '1KG', price: 3000 },
-  { id: '2kg', label: '2KG', price: 6000 },
-] as const;
+  { id: '500g', label: '500g', image: bottle500g.src, price: 3500 },
+  { id: '1kg', label: '1KG', image: bottle1kg.src, price: 6800 },
+  { id: '2kg', label: '2KG', image: bottle2kg.src, price: 13000 },
+];
 
 export function HomeProductShowcase() {
   const { addToCart, addToFavourites, removeFromFavourites, isFavourite } = useApp();
+  const { products, loading } = useProducts({ limit: 1 });
 
-  // Use the first product from your catalog for this hero showcase.
-  const product = products[0];
+  const product = products[0] ?? null;
 
-  const [selectedWeightId, setSelectedWeightId] = useState<(typeof WEIGHT_OPTIONS)[number]['id']>(
-    '500g'
-  );
+  const [selectedWeightId, setSelectedWeightId] = useState('500g');
   const [quantity, setQuantity] = useState(1);
 
-  const inWishlist = isFavourite(product.id);
+  const inWishlist = product ? isFavourite(product.id) : false;
   const activeWeight = WEIGHT_OPTIONS.find((w) => w.id === selectedWeightId) ?? WEIGHT_OPTIONS[0];
 
   const currentPrice = useMemo(() => {
-    return activeWeight.price;
-  }, [activeWeight.price]);
+    const sizeOption = WEIGHT_OPTIONS.find((w) => w.id === selectedWeightId);
+    return sizeOption?.price ?? product?.price ?? 0;
+  }, [product?.price, selectedWeightId]);
 
   const oldPrice = useMemo(
     () => Math.round(currentPrice * 1.15),
@@ -36,11 +38,13 @@ export function HomeProductShowcase() {
   );
 
   const handleAddToCart = () => {
-    const weightLabel = activeWeight.label;
-    addToCart(product, quantity, weightLabel);
+    if (product) {
+      addToCart(product, quantity, product.weight);
+    }
   };
 
   const handleToggleWishlist = () => {
+    if (!product) return;
     if (inWishlist) removeFromFavourites(product.id);
     else addToFavourites(product);
   };
@@ -51,30 +55,42 @@ export function HomeProductShowcase() {
         ? window.location.href
         : 'https://rizwans-desighee.com';
 
-    const text = `${product.name} – Pure Desi Ghee from Rizwan's Desi Ghee`;
+    const text = product
+      ? `${product.name} – Pure Desi Ghee from Rizwan's Desi Ghee`
+      : "Rizwan's Desi Ghee";
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: product.name, text, url: shareUrl });
+        await navigator.share({ title: product?.name ?? "Rizwan's Desi Ghee", text, url: shareUrl });
         return;
       }
     } catch {
-      // Fall through to clipboard/alert
+      // Fall through
     }
 
     try {
       await navigator.clipboard?.writeText?.(shareUrl);
-      // eslint-disable-next-line no-alert
       alert('Product link copied to clipboard.');
     } catch {
-      // eslint-disable-next-line no-alert
       alert('Share not supported in this browser.');
     }
   };
 
   const formattedWeightList = WEIGHT_OPTIONS.map((w) => w.label).join(', ');
+  const sku = product ? `RDG-${product.id}-${activeWeight.label.replace(/\s/g, '')}` : 'RDG-N/A';
+  const variants = WEIGHT_OPTIONS.map((w) => ({ id: w.id, label: w.label, image: w.image }));
 
-  const sku = `RDG-${product.id}-${activeWeight.label.replace(/\s/g, '')}`;
+  if (loading || !product) {
+    return (
+      <section className="border-t border-[#E6B65C]/20 bg-white py-16">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="text-center py-12 text-[#6B4A1E]/70">
+            {loading ? 'Loading featured product…' : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="border-t border-[#E6B65C]/20 bg-white py-16">
@@ -83,12 +99,10 @@ export function HomeProductShowcase() {
           {/* Left: Product image slider */}
           <div className="relative flex flex-col items-center">
             <div className="relative w-full max-w-[520px] rounded-3xl bg-white p-6 shadow-2xl">
-              {/* Discount badge */}
               <div className="absolute right-4 top-4 flex h-10 items-center rounded-full bg-[#ff6b35] px-4 text-xs font-semibold uppercase tracking-wide text-white">
                 -13%
               </div>
 
-              {/* Wishlist + Share icons */}
               <div className="absolute right-4 top-16 flex flex-col gap-3">
                 <button
                   type="button"
@@ -101,9 +115,7 @@ export function HomeProductShowcase() {
                   }`}
                 >
                   <Heart
-                    className={`h-4 w-4 ${
-                      inWishlist ? 'fill-[#E6B65C] text-[#E6B65C]' : ''
-                    }`}
+                    className={`h-4 w-4 ${inWishlist ? 'fill-[#E6B65C] text-[#E6B65C]' : ''}`}
                   />
                 </button>
                 <button
@@ -116,11 +128,11 @@ export function HomeProductShowcase() {
                 </button>
               </div>
 
-              {/* Image with arrows */}
               <ProductImageSlider
                 selectedSizeId={selectedWeightId}
                 onChangeSelectedSize={setSelectedWeightId}
                 productName={product.name}
+                variants={variants}
               />
             </div>
           </div>
@@ -131,7 +143,6 @@ export function HomeProductShowcase() {
               {product.name} | 30 Days Money Back Guarantee
             </h2>
 
-            {/* Pricing */}
             <div className="flex items-end gap-3">
               <div className="space-y-1">
                 <div className="text-sm text-gray-400 line-through">
@@ -143,22 +154,17 @@ export function HomeProductShowcase() {
               </div>
             </div>
 
-            <p className="text-sm text-gray-500">
-              Shipping calculated at checkout.
-            </p>
+            <p className="text-sm text-gray-500">Shipping calculated at checkout.</p>
 
             <p className="text-sm leading-relaxed text-[#6B4A1E]/80">
-              Crafted in small batches from premium cow butter, our pure desi ghee
-              delivers the authentic taste and aroma Pakistani kitchens love.
-              Slow-cooked to preserve the classic grainy texture and golden colour.
+              {product.description ||
+                "Crafted in small batches from premium cow butter, our pure desi ghee delivers the authentic taste and aroma Pakistani kitchens love."}
             </p>
 
-            {/* Weight label */}
             <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               Weight: {activeWeight.label}
             </div>
 
-            {/* Weight selector */}
             <div className="flex flex-wrap gap-2">
               {WEIGHT_OPTIONS.map((weight) => (
                 <button
@@ -176,9 +182,7 @@ export function HomeProductShowcase() {
               ))}
             </div>
 
-            {/* Quantity + buttons */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              {/* Quantity */}
               <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Quantity
@@ -207,7 +211,6 @@ export function HomeProductShowcase() {
               </div>
             </div>
 
-            {/* Main action buttons */}
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -228,9 +231,7 @@ export function HomeProductShowcase() {
                 aria-label="Toggle wishlist"
               >
                 <Heart
-                  className={`h-4 w-4 ${
-                    inWishlist ? 'fill-[#E6B65C] text-[#E6B65C]' : ''
-                  }`}
+                  className={`h-4 w-4 ${inWishlist ? 'fill-[#E6B65C] text-[#E6B65C]' : ''}`}
                 />
               </button>
 
@@ -244,7 +245,6 @@ export function HomeProductShowcase() {
               </button>
             </div>
 
-            {/* Meta info */}
             <div className="space-y-1 pt-4 text-sm text-[#6B4A1E]/80">
               <p>
                 <span className="font-semibold text-[#6B4A1E]">Weight: </span>
@@ -260,7 +260,7 @@ export function HomeProductShowcase() {
               </p>
               <p>
                 <span className="font-semibold text-[#6B4A1E]">Categories: </span>
-                Best Sellers, New Arrivals, Pure Desi Ghee
+                {product.weight || 'Pure Desi Ghee'}
               </p>
             </div>
           </div>
@@ -269,4 +269,3 @@ export function HomeProductShowcase() {
     </section>
   );
 }
-
