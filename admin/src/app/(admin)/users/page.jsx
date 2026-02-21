@@ -37,7 +37,8 @@ export default function UsersPage() {
 
   return (
     <div className="users-page">
-      <div className="table-container">
+      {/* Desktop Table View */}
+      <div className="table-container-desktop">
         <table className="admin-table">
           <thead>
             <tr>
@@ -76,6 +77,45 @@ export default function UsersPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="cards-container-mobile">
+        {users.length === 0 ? (
+          <div className="empty-state">No users found.</div>
+        ) : (
+          users.map((u) => (
+            <div key={u._id} className="user-card">
+              <div className="card-header">
+                <h3>{u.name || '-'}</h3>
+                <span className="badge badge-role">{u.role || 'user'}</span>
+              </div>
+              <div className="card-body">
+                <div className="card-row">
+                  <span className="card-label">Email:</span>
+                  <span className="card-value">{u.email || '-'}</span>
+                </div>
+                <div className="card-row">
+                  <span className="card-label">Phone:</span>
+                  <span className="card-value">{u.phone || '-'}</span>
+                </div>
+                <div className="card-row">
+                  <span className="card-label">Joined:</span>
+                  <span className="card-value">{formatDate(u.createdAt)}</span>
+                </div>
+              </div>
+              <div className="card-footer">
+                <button
+                  type="button"
+                  className="btn-sm btn-danger"
+                  onClick={() => handleDelete(u._id, u.name)}
+                >
+                  Delete User
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )

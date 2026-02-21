@@ -11,8 +11,10 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     category: '',
     stock: '0',
     isActive: true,
-    images: '',
+    images: [],
   })
+  const [imageUrls, setImageUrls] = useState('')
+  const [previewImages, setPreviewImages] = useState([])
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -25,8 +27,10 @@ export default function ProductForm({ product, onClose, onSuccess }) {
         category: product.category || '',
         stock: String(product.stock ?? 0),
         isActive: product.isActive !== false,
-        images: Array.isArray(product.images) ? product.images.join('\n') : '',
+        images: Array.isArray(product.images) ? product.images : [],
       })
+      setImageUrls(Array.isArray(product.images) ? product.images.join('\n') : '')
+      setPreviewImages(Array.isArray(product.images) ? product.images : [])
     }
   }, [product])
 
@@ -38,19 +42,60 @@ export default function ProductForm({ product, onClose, onSuccess }) {
     }))
   }
 
+  const handleImageInput = (e) => {
+    const { value } = e.target
+    setImageUrls(value)
+    const urls = value
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    setPreviewImages(urls)
+  }
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    files.forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const base64 = String(reader.result)
+        setPreviewImages((prev) => [...prev, base64])
+        setForm((prev) => ({
+          ...prev,
+          images: [...prev.images, base64],
+        }))
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const removeImage = (index) => {
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index))
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
-    const images = form.images
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean)
+
+    const images = form.images.length > 0 ? form.images : (
+      imageUrls
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    )
+
     if (images.length === 0) {
-      setError('At least one image URL is required')
+      setError('At least one image is required')
       setSubmitting(false)
       return
     }
+
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
@@ -60,6 +105,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
       isActive: form.isActive,
       images,
     }
+
     try {
       if (product?._id) {
         await adminApi.updateProduct(product._id, payload)
@@ -76,7 +122,7 @@ export default function ProductForm({ product, onClose, onSuccess }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{product ? 'Edit Product' : 'Add Product'}</h3>
           <button type="button" className="modal-close" onClick={onClose}>
@@ -141,15 +187,60 @@ export default function ProductForm({ product, onClose, onSuccess }) {
             />
           </div>
           <div className="form-group">
-            <label>Image URLs (one per line) *</label>
-            <textarea
-              name="images"
-              value={form.images}
-              onChange={handleChange}
-              rows={3}
-              placeholder="https://example.com/image1.jpg"
-            />
-            <small>Enter image URLs, one per line. Cloudinary/S3 integration coming soon.</small>
+            <label>Images *</label>
+            <div className="image-upload-section">
+              <div className="image-upload-input">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                  onChange={handleImageUpload}
+                  id="image-select"
+                  style={{ display: 'none' }}
+                />
+                <button
+                  type="button"
+                  className="btn-upload"
+                  onClick={() => document.getElementById('image-select').click()}
+                >
+                  📁 Choose Photos
+                </button>
+                <small>Upload product images from your device (PNG, JPG, GIF, WebP)</small>
+              </div>
+              
+              {previewImages.length > 0 && (
+                <div className="image-preview-grid">
+                  {previewImages.map((src, idx) => (
+                    <div key={idx} className="image-preview-item">
+                      <img 
+                        src={src} 
+                        alt={`Preview ${idx + 1}`}
+                        style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        className="btn-remove-image"
+                        onClick={() => removeImage(idx)}
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="image-url-fallback">
+                <label>Or paste image URLs (one per line) *</label>
+                <textarea
+                  value={imageUrls}
+                  onChange={handleImageInput}
+                  rows={2}
+                  placeholder="https://example.com/image1.jpg"
+                />
+                <small>If no photos are uploaded, URLs will be used instead</small>
+              </div>
+            </div>
           </div>
           <div className="form-group form-check">
             <label>

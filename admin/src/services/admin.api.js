@@ -10,6 +10,7 @@ export const adminApi = {
   // Orders
   getOrders: () => api.get('/admin/orders'),
   updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}`, { status }),
+  deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
 
   // Users
   getUsers: () => api.get('/admin/users'),

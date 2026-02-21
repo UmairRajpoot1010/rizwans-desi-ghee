@@ -9,10 +9,17 @@ const api = axios.create({
   },
 })
 
-// Request interceptor - attach auth token
+// Request interceptor - attach auth token; block protected routes without token
+const ADMIN_PROTECTED_PATHS = ['/admin/auth/me', '/admin/dashboard', '/admin/products', '/admin/orders', '/admin/users']
+const isProtectedPath = (url) => ADMIN_PROTECTED_PATHS.some((p) => url?.includes(p))
+
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('adminToken')
+    if (isProtectedPath(config.url) && !token) {
+      window.location.href = '/login'
+      return Promise.reject(new Error('Admin authentication required'))
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -20,11 +27,12 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor - handle 401
+// Response interceptor - handle 401/403 (token expired or forbidden)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
+    const status = error.response?.status
+    if ((status === 401 || status === 403) && typeof window !== 'undefined') {
       localStorage.removeItem('adminToken')
       localStorage.removeItem('adminUser')
       window.location.href = '/login'
@@ -32,6 +40,10 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export const healthApi = {
+  check: () => api.get('/health'),
+}
 
 export const adminApi = {
   login: (email, password) =>

@@ -11,24 +11,41 @@ export function AdminAuthProvider({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
-    if (token) {
-      // Verify token and get admin info
-      // This will be implemented when auth logic is added
+    if (!token) {
       setLoading(false)
-    } else {
-      setLoading(false)
+      return
     }
+    authService.getCurrentAdmin()
+      .then((res) => {
+        const payload = res?.data
+        if (payload?.success && payload?.data) {
+          setAdmin(payload.data)
+        } else {
+          localStorage.removeItem('adminToken')
+          localStorage.removeItem('adminUser')
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem('adminToken')
+        localStorage.removeItem('adminUser')
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const login = async (email, password) => {
     try {
       const response = await authService.login(email, password)
-      const { token, admin } = response.data
-      localStorage.setItem('adminToken', token)
-      setAdmin(admin)
+      const payload = response?.data
+      const data = payload?.data
+      if (!payload?.success || !data?.token || !data?.admin) {
+        return { success: false, error: payload?.message ?? 'Login failed' }
+      }
+      localStorage.setItem('adminToken', data.token)
+      setAdmin(data.admin)
       return { success: true }
     } catch (error) {
-      return { success: false, error: error.response?.data?.message }
+      const msg = error?.response?.data?.message ?? error?.message ?? 'Login failed'
+      return { success: false, error: msg }
     }
   }
 

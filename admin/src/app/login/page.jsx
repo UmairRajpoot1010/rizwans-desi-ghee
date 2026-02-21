@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
       if (result?.success) {
         router.replace('/dashboard')
       } else {
-        setError(result?.message || 'Invalid credentials')
+        setError(result?.message ?? result?.error ?? 'Invalid credentials')
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.')

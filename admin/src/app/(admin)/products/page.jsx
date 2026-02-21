@@ -59,13 +59,15 @@ export default function ProductsPage() {
 
   return (
     <div className="products-page">
-      <div className="page-header">
+      <div className="page-header-responsive">
         <h2>Products</h2>
         <button type="button" className="btn-primary" onClick={handleCreate}>
-          Add Product
+          + Add
         </button>
       </div>
-      <div className="table-container">
+
+      {/* Desktop Table Only */}
+      <div className="table-container-desktop">
         <table className="admin-table">
           <thead>
             <tr>
@@ -84,7 +86,7 @@ export default function ProductsPage() {
               </tr>
             ) : (
               products.map((p) => (
-                <tr key={p._id}>
+                <tr key={p._id} onClick={() => handleEdit(p)} className="clickable-row" style={{ cursor: 'pointer' }}>
                   <td>
                     <div className="product-cell">
                       {p.images?.[0] && (
@@ -106,7 +108,7 @@ export default function ProductsPage() {
                       {p.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="btn-sm btn-edit"

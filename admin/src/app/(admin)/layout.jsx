@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
@@ -16,12 +16,17 @@ export default function AdminLayout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
   const { admin, loading, logout, isAuthenticated } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.replace('/login')
     }
   }, [loading, isAuthenticated, router])
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
 
   if (loading) {
     return (
@@ -37,10 +42,28 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="admin-layout">
-      <aside className="sidebar">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Rizwan&apos;s Ghee</h2>
           <span className="sidebar-subtitle">Admin Panel</span>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
         </div>
         <nav className="sidebar-nav">
           {navItems.map((item) => (
@@ -50,7 +73,7 @@ export default function AdminLayout({ children }) {
               className={pathname === item.href ? 'active' : ''}
             >
               <span className="nav-icon">{item.icon}</span>
-              {item.label}
+              <span className="nav-label">{item.label}</span>
             </Link>
           ))}
         </nav>
@@ -63,8 +86,18 @@ export default function AdminLayout({ children }) {
           </button>
         </div>
       </aside>
+
+      {/* Main content */}
       <main className="admin-main">
         <header className="admin-header">
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle menu"
+          >
+            ☰
+          </button>
           <h1 className="page-title">
             {navItems.find((i) => i.href === pathname)?.label || 'Admin'}
           </h1>

@@ -25,6 +25,15 @@ export function AuthProvider({ children }) {
     return null
   }, [])
 
+  const logoutRef = useCallback(() => {
+    localStorage.removeItem('adminToken')
+    localStorage.removeItem('adminUser')
+    setAdmin(null)
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
+    }
+  }, [])
+
   const initAuth = useCallback(async () => {
     const stored = loadStoredAuth()
     if (!stored) {
@@ -33,45 +42,55 @@ export function AuthProvider({ children }) {
     }
     try {
       const res = await adminApi.getMe()
-      if (res.data?.success && res.data?.data) {
-        setAdmin(res.data.data)
-        localStorage.setItem('adminUser', JSON.stringify(res.data.data))
-      } else {
-        logout()
+      const payload = res?.data
+      const data = payload?.data
+      if (!payload?.success || !data) {
+        logoutRef()
+        return
       }
+      const role = (data.role || '').toLowerCase()
+      if (role !== 'admin' && role !== 'superadmin') {
+        logoutRef()
+        return
+      }
+      setAdmin(data)
+      localStorage.setItem('adminUser', JSON.stringify(data))
     } catch {
-      logout()
+      logoutRef()
     } finally {
       setLoading(false)
     }
-  }, [loadStoredAuth])
+  }, [loadStoredAuth, logoutRef])
 
   useEffect(() => {
     initAuth()
   }, [initAuth])
 
   const login = async (email, password) => {
-    const res = await adminApi.login(email, password)
-    const { data } = res.data
-    if (data?.token && data?.admin) {
+    try {
+      const res = await adminApi.login(email, password)
+      const payload = res?.data
+      const data = payload?.data
+      if (!payload?.success || !data?.token || !data?.admin) {
+        return { success: false, message: payload?.message ?? 'Login failed' }
+      }
+      const role = (data.admin?.role || '').toLowerCase()
+      if (role !== 'admin' && role !== 'superadmin') {
+        return { success: false, message: 'Access denied. Admin or superadmin role required.' }
+      }
       localStorage.setItem('adminToken', data.token)
       localStorage.setItem('adminUser', JSON.stringify(data.admin))
       setAdmin(data.admin)
       return { success: true }
-    }
-    return { success: false, message: res.data?.message || 'Login failed' }
-  }
-
-  const logout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUser')
-    setAdmin(null)
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
+    } catch (err) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Login failed'
+      return { success: false, message: msg }
     }
   }
 
-  const isAuthenticated = !!admin
+  const logout = logoutRef
+
+  const isAuthenticated = !!admin && (admin.role === 'admin' || admin.role === 'superadmin')
 
   return (
     <AuthContext.Provider value={{ admin, loading, login, logout, isAuthenticated }}>
