@@ -58,6 +58,10 @@ if (NODE_ENV === 'development') {
 app.use(express.json({ limit: '10mb' })) // Limit JSON payload size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
+// Serve uploaded files (payment screenshots, etc.)
+const path = require('path')
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
 // Trust proxy (important for rate limiting and correct IP addresses)
 app.set('trust proxy', 1)
 

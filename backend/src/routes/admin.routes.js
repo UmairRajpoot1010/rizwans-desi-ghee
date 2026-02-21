@@ -22,6 +22,7 @@ const {
   deleteProduct,
   getAllOrders,
   updateOrderStatus,
+  deleteOrder,
   getAllUsers,
   updateUser,
   deleteUser,
@@ -57,6 +58,7 @@ router.delete('/products/:id', protectAdmin, deleteProduct)
 // ============================================
 router.get('/orders', protectAdmin, getAllOrders)
 router.put('/orders/:id', protectAdmin, validateOrderStatus, updateOrderStatus)
+router.delete('/orders/:id', protectAdmin, deleteOrder)
 
 // ============================================
 // User Management Routes

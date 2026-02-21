@@ -313,7 +313,7 @@ exports.getAllOrders = async (req, res, next) => {
 // COD: Admin can set paymentStatus to "paid" (collected on delivery) or "failed"
 exports.updateOrderStatus = async (req, res, next) => {
   try {
-    const { status, paymentStatus } = req.body
+    const { status, paymentStatus, paymentVerificationStatus } = req.body
     const orderId = req.params.id
 
     const order = await Order.findById(orderId)
@@ -326,6 +326,7 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
     const validPaymentStatuses = ['pending', 'paid', 'failed']
+    const validPaymentVerification = ['pending', 'verified', 'rejected']
 
     if (status && !validStatuses.includes(status)) {
       return sendResponse(res, 400, {
@@ -338,6 +339,13 @@ exports.updateOrderStatus = async (req, res, next) => {
       return sendResponse(res, 400, {
         success: false,
         message: `Invalid payment status. Must be one of: ${validPaymentStatuses.join(', ')}`,
+      })
+    }
+
+    if (paymentVerificationStatus && !validPaymentVerification.includes(paymentVerificationStatus)) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: `Invalid payment verification status. Must be one of: ${validPaymentVerification.join(', ')}`,
       })
     }
 
@@ -366,6 +374,10 @@ exports.updateOrderStatus = async (req, res, next) => {
       order.paymentStatus = paymentStatus
     }
 
+    if (paymentVerificationStatus) {
+      order.paymentVerificationStatus = paymentVerificationStatus
+    }
+
     // If order is newly cancelled, restore product stock
     if (status === 'cancelled' && previousStatus !== 'cancelled') {
       for (const item of order.items) {
@@ -386,6 +398,43 @@ exports.updateOrderStatus = async (req, res, next) => {
       success: true,
       message: 'Order status updated successfully',
       data: order,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// @desc    Delete order (Admin)
+// @route   DELETE /api/admin/orders/:id
+// @access  Private (Admin)
+exports.deleteOrder = async (req, res, next) => {
+  try {
+    const orderId = req.params.id
+
+    const order = await Order.findById(orderId)
+    if (!order) {
+      return sendResponse(res, 404, {
+        success: false,
+        message: 'Order not found',
+      })
+    }
+
+    // Restore product stock if order wasn't already cancelled
+    if (order.status !== 'cancelled') {
+      for (const item of order.items) {
+        const product = await Product.findById(item.product)
+        if (product) {
+          product.stock += item.quantity
+          await product.save()
+        }
+      }
+    }
+
+    await Order.findByIdAndDelete(orderId)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Order deleted successfully',
     })
   } catch (error) {
     next(error)

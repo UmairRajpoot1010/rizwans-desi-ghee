@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const { MONGODB_URI, NODE_ENV } = require('./env')
+const { MONGODB_URI, NODE_ENV, ADMIN_EMAIL, ADMIN_PASSWORD } = require('./env')
 
 /**
  * MongoDB Connection Configuration
@@ -16,6 +16,42 @@ const mongooseOptions = {
   connectTimeoutMS: 10000,
   retryWrites: true, // Atlas default
   retryReads: true,
+}
+
+/**
+ * Initialize default admin account if it doesn't exist
+ * @returns {Promise<void>}
+ */
+const initializeDefaultAdmin = async () => {
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    console.warn('⚠️  ADMIN_EMAIL or ADMIN_PASSWORD not configured, skipping default admin creation')
+    return
+  }
+
+  try {
+    const Admin = require('../models/Admin')
+    const existingAdmin = await Admin.findByEmail(ADMIN_EMAIL.toLowerCase())
+
+    if (existingAdmin) {
+      console.log('✅ Default admin account already exists')
+      return
+    }
+
+    const admin = new Admin({
+      name: 'Admin',
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+      role: 'admin',
+      isActive: true,
+    })
+
+    await admin.save()
+    console.log('✅ Default admin account created successfully')
+    console.log(`   Email: ${ADMIN_EMAIL}`)
+  } catch (error) {
+    console.error('⚠️  Failed to initialize default admin:', error.message)
+    // Don't exit here, as this is not critical
+  }
 }
 
 /**
@@ -52,6 +88,9 @@ const connectDB = async () => {
     console.log(`   Status: Ready`)
 
     setupConnectionHandlers()
+    
+    // Initialize default admin account
+    await initializeDefaultAdmin()
     
   } catch (error) {
     console.error('❌ MongoDB Connection Failed')

@@ -1,5 +1,9 @@
 const User = require('../models/User')
 const { generateToken } = require('../utils/generateToken')
+const { OAuth2Client } = require('google-auth-library')
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID)
 
 /**
  * Helper to send a consistent JSON response.
@@ -153,6 +157,88 @@ exports.getMe = async (req, res, next) => {
       success: true,
       message: 'User profile fetched successfully',
       data: user,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// @desc    Google Sign-In (ID token)
+// @route   POST /api/auth/google
+// @access  Public
+exports.googleAuth = async (req, res, next) => {
+  try {
+    const { idToken } = req.body
+    if (!idToken) {
+      return sendResponse(res, 400, { success: false, message: 'idToken is required' })
+    }
+
+    const ticket = await googleClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID })
+    const payload = ticket.getPayload()
+    if (!payload || !payload.email) {
+      return sendResponse(res, 400, { success: false, message: 'Invalid Google token' })
+    }
+
+    const email = payload.email.toLowerCase()
+    let user = await User.findOne({ email })
+    if (!user) {
+      // Auto-register user
+      user = await User.create({
+        name: payload.name || 'Google User',
+        email,
+        password: Math.random().toString(36).slice(-8), // random password
+      })
+    }
+
+    if (user.isActive === false) {
+      return sendResponse(res, 403, { success: false, message: 'User account is inactive' })
+    }
+
+    const token = generateToken(user._id)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Login successful',
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// @desc    Google callback (accepts id_token in query)
+// @route   GET /api/auth/google/callback
+// @access  Public
+exports.googleCallback = async (req, res, next) => {
+  try {
+    const idToken = req.query.id_token || req.query.idtoken
+    if (!idToken) {
+      return sendResponse(res, 400, { success: false, message: 'id_token query parameter is required' })
+    }
+    const ticket = await googleClient.verifyIdToken({ idToken: idToken.toString(), audience: GOOGLE_CLIENT_ID })
+    const payload = ticket.getPayload()
+    if (!payload || !payload.email) {
+      return sendResponse(res, 400, { success: false, message: 'Invalid Google token' })
+    }
+    const email = payload.email.toLowerCase()
+    let user = await User.findOne({ email })
+    if (!user) {
+      user = await User.create({ name: payload.name || 'Google User', email, password: Math.random().toString(36).slice(-8) })
+    }
+    const token = generateToken(user._id)
+    // Return JSON with token (frontend can redirect / parse)
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Login successful',
+      data: { token, user: { id: user._id, name: user.name, email: user.email, role: user.role } },
     })
   } catch (error) {
     next(error)

@@ -234,10 +234,14 @@ const validateOrderStatus = [
     .optional({ checkFalsy: false })
     .isIn(['pending', 'paid', 'failed'])
     .withMessage('Invalid payment status. Must be one of: pending, paid, failed'),
+  body('paymentVerificationStatus')
+    .optional({ checkFalsy: false })
+    .isIn(['pending', 'verified', 'rejected'])
+    .withMessage('Invalid payment verification status. Must be one of: pending, verified, rejected'),
   body()
     .custom((body) => {
-      if (!body.status && !body.paymentStatus) {
-        throw new Error('At least one of status or paymentStatus must be provided')
+      if (!body.status && !body.paymentStatus && !body.paymentVerificationStatus) {
+        throw new Error('At least one of status, paymentStatus, or paymentVerificationStatus must be provided')
       }
       return true
     }),

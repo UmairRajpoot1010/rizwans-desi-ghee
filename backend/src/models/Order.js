@@ -136,6 +136,28 @@ const orderSchema = new mongoose.Schema(
       },
       default: 'pending',
     },
+    // Payment method and screenshot for online payments
+    paymentMethod: {
+      type: String,
+      enum: {
+        values: ['COD', 'ONLINE'],
+        message: 'Payment method must be either COD or ONLINE',
+      },
+      default: 'COD',
+    },
+    paymentScreenshot: {
+      type: String,
+      default: null,
+    },
+    // Admin verification of online payment proof
+    paymentVerificationStatus: {
+      type: String,
+      enum: {
+        values: ['pending', 'verified', 'rejected'],
+        message: 'Payment verification must be one of: pending, verified, rejected',
+      },
+      default: 'pending',
+    },
   },
   {
     timestamps: true,

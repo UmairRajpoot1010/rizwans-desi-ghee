@@ -18,7 +18,15 @@ const sendResponse = (res, statusCode, { success, message, data, meta }) => {
 // Admin marks as "paid" when customer pays on delivery.
 exports.createOrder = async (req, res, next) => {
   try {
-    const { items, shippingAddress } = req.body
+    // Support multipart/form-data: items and shippingAddress may be JSON strings
+    let { items, shippingAddress, paymentMethod } = req.body
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items) } catch { items = [] }
+    }
+    if (typeof shippingAddress === 'string') {
+      try { shippingAddress = JSON.parse(shippingAddress) } catch { shippingAddress = null }
+    }
+    paymentMethod = (paymentMethod || 'COD').toString().toUpperCase()
     const userId = req.user?._id || req.user?.id
 
     if (!userId) {
@@ -100,13 +108,28 @@ exports.createOrder = async (req, res, next) => {
       await product.save()
     }
 
+    // If ONLINE payment selected, require screenshot
+    let screenshotUrl = null
+    if (paymentMethod === 'ONLINE') {
+      if (!req.file) {
+        return sendResponse(res, 400, { success: false, message: 'Payment screenshot is required for online payments' })
+      }
+      // Build accessible URL for uploaded file
+      const host = req.get('host')
+      const proto = req.protocol
+      screenshotUrl = `${proto}://${host}/uploads/${req.file.filename}`
+    }
+
     const order = await Order.create({
       user: userId,
       items: orderItems,
       totalAmount,
       shippingAddress,
       status: 'pending',
-      paymentStatus: 'pending', // COD: payment collected on delivery
+      paymentStatus: paymentMethod === 'COD' ? 'pending' : 'pending',
+      paymentMethod,
+      paymentScreenshot: screenshotUrl,
+      paymentVerificationStatus: paymentMethod === 'ONLINE' ? 'pending' : 'pending',
     })
 
     await order.populate('items.product')
@@ -271,7 +294,7 @@ exports.getOrderById = async (req, res, next) => {
 // @access  Private (Admin)
 exports.updateOrderStatus = async (req, res, next) => {
   try {
-    const { status, paymentStatus } = req.body
+    const { status, paymentStatus, paymentVerificationStatus } = req.body
     const { id } = req.params
 
     if (!isValidObjectId(id)) {
@@ -291,6 +314,7 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
     const validPaymentStatuses = ['pending', 'paid', 'failed']
+    const validPaymentVerification = ['pending', 'verified', 'rejected']
 
     if (status && !validStatuses.includes(status)) {
       return sendResponse(res, 400, {
@@ -303,6 +327,13 @@ exports.updateOrderStatus = async (req, res, next) => {
       return sendResponse(res, 400, {
         success: false,
         message: `Invalid payment status. Must be one of: ${validPaymentStatuses.join(', ')}`,
+      })
+    }
+
+    if (paymentVerificationStatus && !validPaymentVerification.includes(paymentVerificationStatus)) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: `Invalid payment verification status. Must be one of: ${validPaymentVerification.join(', ')}`,
       })
     }
 
@@ -324,13 +355,14 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     const previousStatus = order.status
 
-    if (status) {
-      order.status = status
-    }
+    // Build update object
+    const updateData = {}
+    if (status) updateData.status = status
+    if (paymentStatus) updateData.paymentStatus = paymentStatus
+    if (paymentVerificationStatus) updateData.paymentVerificationStatus = paymentVerificationStatus
 
-    if (paymentStatus) {
-      order.paymentStatus = paymentStatus
-    }
+    // Apply updates
+    Object.assign(order, updateData)
 
     if (status === 'cancelled' && previousStatus !== 'cancelled') {
       for (const item of order.items) {
