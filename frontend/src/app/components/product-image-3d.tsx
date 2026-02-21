@@ -105,7 +105,7 @@ export function ProductImage3D({
         className="relative transition-transform duration-500 ease-out"
       >
         <Image
-          {...imageProps}
+          {...(imageProps as ImageProps)}
           className={`h-auto max-h-[420px] w-auto object-contain select-none pointer-events-none drop-shadow-xl ${className ?? ''}`}
         />
       </div>
