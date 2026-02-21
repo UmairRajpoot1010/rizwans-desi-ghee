@@ -160,7 +160,7 @@ export function AuthPanel({ open, mode, onClose, onModeChange }: Props) {
           : await signup(name.trim(), email.trim(), password);
 
       if (!res.ok) {
-        setFormError('Authentication failed. Please try again.');
+        setFormError('message' in res ? res.message : 'Authentication failed. Please try again.');
         return;
       }
 
