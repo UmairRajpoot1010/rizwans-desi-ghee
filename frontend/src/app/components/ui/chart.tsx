@@ -40,9 +40,9 @@ function ChartContainer({
   children,
   config,
   ...props
-}: React.ComponentProps<"div"> & {
+}: React.ComponentPropsWithoutRef<"div"> & {
   config: ChartConfig;
-  children: React.ComponentProps<
+  children: React.ComponentPropsWithoutRef<
     typeof RechartsPrimitive.ResponsiveContainer
   >["children"];
 }) {
@@ -118,8 +118,8 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-  React.ComponentProps<"div"> & {
+}: React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Tooltip> &
+  React.ComponentPropsWithoutRef<"div"> & {
     hideLabel?: boolean;
     hideIndicator?: boolean;
     indicator?: "line" | "dot" | "dashed";
@@ -256,7 +256,7 @@ function ChartLegendContent({
   payload,
   verticalAlign = "bottom",
   nameKey,
-}: React.ComponentProps<"div"> &
+}: React.ComponentPropsWithoutRef<"div"> &
   Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
     hideIcon?: boolean;
     nameKey?: string;
