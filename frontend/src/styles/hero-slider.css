@@ -12,9 +12,9 @@
 /* Mobile: Taller aspect for better mobile viewing */
 @media (max-width: 640px) {
   .hero-slider {
-    aspect-ratio: 9 / 12;
-    min-height: 350px;
-    max-height: 80vh;
+    aspect-ratio: 16 / 9;
+    min-height: 250px;
+    max-height: 60vh;
   }
 }
 

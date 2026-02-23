@@ -4,7 +4,7 @@ import { useProducts } from '@/hooks/use-products';
 import type { Product } from '@/app/context/app-context';
 
 export function TopCollection() {
-  const { addToCart, setCurrentPage, setSelectedProduct } = useApp();
+  const { setCurrentPage, setSelectedProduct } = useApp();
   const { products } = useProducts({ limit: 6 });
   const [isMobile, setIsMobile] = useState(false);
 
@@ -24,7 +24,6 @@ export function TopCollection() {
   }, []);
 
   const handleQuickShop = (product: Product) => {
-    addToCart(product, 1, product.weight);
     setSelectedProduct(product);
     setCurrentPage('product');
     if (typeof window !== 'undefined') {
@@ -50,9 +49,8 @@ export function TopCollection() {
         </div>
 
         <div
-          className={`group relative ${
-            isMobile ? 'overflow-x-auto pb-2' : 'overflow-hidden'
-          }`}
+          className={`group relative ${isMobile ? 'overflow-x-auto pb-2' : 'overflow-hidden'
+            }`}
         >
           <div
             className={[

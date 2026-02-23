@@ -40,7 +40,10 @@ export function ShopPage() {
   };
 
   const handleAddToCart = (product: Product) => {
-    addToCart(product, 1, product.weight);
+    // Default to 1kg if available, otherwise first variant
+    // @ts-ignore
+    const defaultSize = product.variants?.find((v: any) => v.size === '1kg')?.size || product.variants?.[0]?.size || '1kg';
+    addToCart(product, 1, defaultSize);
   };
 
   const imageForProduct = (p: Product) => p.image || '';
@@ -237,9 +240,8 @@ export function ShopPage() {
                           className="absolute top-2 right-2 md:top-4 md:right-4 flex h-8 md:h-9 w-8 md:w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
                         >
                           <Heart
-                            className={`h-3 h-4 md:h-4 md:w-4 ${
-                              isFavourite(product.id) ? 'fill-[#E6B65C] text-[#E6B65C]' : ''
-                            }`}
+                            className={`h-3 h-4 md:h-4 md:w-4 ${isFavourite(product.id) ? 'fill-[#E6B65C] text-[#E6B65C]' : ''
+                              }`}
                           />
                         </button>
                       </div>
@@ -274,7 +276,7 @@ export function ShopPage() {
                             className="text-lg md:text-2xl text-[#5F6B3C]"
                             style={{ fontFamily: 'Playfair Display, serif' }}
                           >
-                            PKR {product.price}
+                            PKR {product.price.toLocaleString('en-PK')}
                           </p>
                         </div>
 

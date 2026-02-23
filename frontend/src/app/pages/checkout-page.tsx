@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, CreditCard, Truck } from 'lucide-react';
+import { CheckCircle, CreditCard, Truck, Package } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
 import { ordersApi, getErrorMessage } from '@/lib/api';
 import { AxiosError } from 'axios';
 
 export function CheckoutPage() {
-  const { cart, setCurrentPage, isAuthenticated, user, clearCart } = useApp();
+  const { cart, setCurrentPage, isAuthenticated, user, clearCart, setSelectedOrderId } = useApp();
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -23,9 +23,9 @@ export function CheckoutPage() {
     state: '',
   });
 
-  const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  const deliveryCharges = subtotal > 2000 ? 0 : 50;
-  const total = subtotal + deliveryCharges;
+  const subtotal: number = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  const deliveryCharges: number = 0;
+  const total: number = subtotal + deliveryCharges;
 
   useEffect(() => {
     if (cart.length === 0) {
@@ -78,6 +78,7 @@ export function CheckoutPage() {
       const items = cart.map((item) => ({
         product: item.id,
         quantity: item.quantity,
+        size: item.selectedWeight,
       }));
       const shippingAddress = {
         name: formData.name.trim(),
@@ -97,12 +98,12 @@ export function CheckoutPage() {
         setLastOrderId(payload.data?._id || null);
         setOrderPlacementStage('placing');
         setShowSuccess(true);
-        
+
         // Transition from "placing" to "placed" after 2 seconds
         window.setTimeout(() => {
           setOrderPlacementStage('placed');
         }, 2000);
-        
+
         return;
       }
       setOrderError(payload?.message ?? 'Order failed. Please try again.');
@@ -324,11 +325,10 @@ export function CheckoutPage() {
 
                   <div className="space-y-3 md:space-y-4">
                     <label
-                      className={`flex items-start gap-3 md:gap-4 p-3 md:p-6 rounded-lg md:rounded-2xl border-2 cursor-pointer transition-all text-sm md:text-base ${
-                        paymentMethod === 'cod'
-                          ? 'border-[#5F6B3C] bg-[#5F6B3C]/5'
-                          : 'border-[#E6B65C]/20 hover:border-[#E6B65C]'
-                      }`}
+                      className={`flex items-start gap-3 md:gap-4 p-3 md:p-6 rounded-lg md:rounded-2xl border-2 cursor-pointer transition-all text-sm md:text-base ${paymentMethod === 'cod'
+                        ? 'border-[#5F6B3C] bg-[#5F6B3C]/5'
+                        : 'border-[#E6B65C]/20 hover:border-[#E6B65C]'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -361,11 +361,10 @@ export function CheckoutPage() {
                     </label>
 
                     <label
-                      className={`flex items-start gap-3 md:gap-4 p-3 md:p-6 rounded-lg md:rounded-2xl border-2 cursor-pointer transition-all text-sm md:text-base ${
-                        paymentMethod === 'online'
-                          ? 'border-[#5F6B3C] bg-[#5F6B3C]/5'
-                          : 'border-[#E6B65C]/20 hover:border-[#E6B65C]'
-                      }`}
+                      className={`flex items-start gap-3 md:gap-4 p-3 md:p-6 rounded-lg md:rounded-2xl border-2 cursor-pointer transition-all text-sm md:text-base ${paymentMethod === 'online'
+                        ? 'border-[#5F6B3C] bg-[#5F6B3C]/5'
+                        : 'border-[#E6B65C]/20 hover:border-[#E6B65C]'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -453,7 +452,7 @@ export function CheckoutPage() {
                   <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
                     {cart.map((item) => (
                       <div
-                        key={`${item.id}-${item.selectedWeight}`}
+                        key={item.cartItemId}
                         className="flex gap-4 pb-4 border-b border-[#E6B65C]/20"
                       >
                         <div className="w-16 h-16 bg-[#FAF7F2] rounded-xl p-2">
@@ -481,7 +480,7 @@ export function CheckoutPage() {
                           className="text-[#6B4A1E]"
                           style={{ fontFamily: 'Poppins, sans-serif' }}
                         >
-                          PKR {item.price * item.quantity}
+                          PKR {(item.price * item.quantity).toLocaleString('en-PK')}
                         </p>
                       </div>
                     ))}
@@ -493,7 +492,7 @@ export function CheckoutPage() {
                       style={{ fontFamily: 'Poppins, sans-serif' }}
                     >
                       <span>Subtotal</span>
-                      <span>PKR {subtotal}</span>
+                      <span>PKR {subtotal.toLocaleString('en-PK')}</span>
                     </div>
                     <div
                       className="flex justify-between text-[#6B4A1E]/70"
@@ -501,7 +500,7 @@ export function CheckoutPage() {
                     >
                       <span>Delivery</span>
                       <span>
-                        {deliveryCharges === 0 ? 'FREE' : `PKR ${deliveryCharges}`}
+                        {deliveryCharges === 0 ? 'FREE' : `PKR ${deliveryCharges.toLocaleString('en-PK')}`}
                       </span>
                     </div>
                     <div className="border-t border-[#E6B65C]/20 pt-3">
@@ -516,7 +515,7 @@ export function CheckoutPage() {
                           className="text-3xl text-[#5F6B3C]"
                           style={{ fontFamily: 'Playfair Display, serif' }}
                         >
-                          PKR {total}
+                          PKR {total.toLocaleString('en-PK')}
                         </span>
                       </div>
                     </div>
@@ -574,32 +573,45 @@ export function CheckoutPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-[#6B4A1E]">Order Placed Successfully!</h3>
                 <p className="mt-2 text-sm text-[#6B4A1E]/70">Your order has been received. We'll process it shortly.</p>
-                
+
+                {lastOrderId && (
+                  <div className="mt-4 p-3 bg-[#FAF7F2] rounded-xl border border-[#E6B65C]/20">
+                    <p className="text-xs uppercase tracking-widest font-bold text-[#6B4A1E]/50 mb-1">Order ID</p>
+                    <p className="text-sm font-mono font-bold text-[#5F6B3C]">#{lastOrderId.slice(-8).toUpperCase()}</p>
+                  </div>
+                )}
+
                 <div className="mt-6 flex flex-col gap-3">
                   <button
                     onClick={() => {
                       setShowSuccess(false);
-                      setCurrentPage('profile');
+                      if (lastOrderId) {
+                        setSelectedOrderId(lastOrderId);
+                        setCurrentPage('order-detail'); // Direct navigation to the new order
+                      } else {
+                        setCurrentPage('profile');
+                      }
                       window.scrollTo(0, 0);
                     }}
-                    className="w-full py-3 bg-[#5F6B3C] text-white rounded-full hover:bg-[#6B4A1E] transition-all font-semibold"
+                    className="w-full py-4 bg-[#5F6B3C] text-white rounded-full hover:bg-[#6B4A1E] transition-all font-bold shadow-lg flex items-center justify-center gap-2"
                     style={{ fontFamily: 'Poppins, sans-serif' }}
                   >
-                    Check Order Status
+                    <Package className="w-5 h-5" />
+                    View Order Details
                   </button>
                   <button
                     onClick={() => {
                       setShowSuccess(false);
-                      setCurrentPage('home');
+                      setCurrentPage('shop');
                       window.scrollTo(0, 0);
                     }}
-                    className="w-full py-2 border-2 border-[#5F6B3C] text-[#5F6B3C] rounded-full hover:bg-[#5F6B3C]/5 transition-all font-semibold"
+                    className="w-full py-2 border-2 border-[#5F6B3C]/30 text-[#5F6B3C] rounded-full hover:bg-[#5F6B3C]/5 transition-all font-semibold"
                     style={{ fontFamily: 'Poppins, sans-serif' }}
                   >
                     Continue Shopping
                   </button>
                 </div>
-                
+
                 <p className="mt-4 text-xs text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
                   For immediate support, contact us on WhatsApp
                 </p>

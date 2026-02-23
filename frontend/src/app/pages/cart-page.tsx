@@ -9,8 +9,8 @@ export function CartPage() {
     return total + (price * item.quantity);
   }, 0);
 
-  const deliveryCharges = subtotal > 2000 ? 0 : 50;
-  const total = subtotal + deliveryCharges;
+  const deliveryCharges: number = 0;
+  const total: number = subtotal + deliveryCharges;
 
   const handleProceedToCheckout = () => {
     setCurrentPage('checkout');
@@ -68,15 +68,15 @@ export function CartPage() {
             {/* Product List */}
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item) => (
-                <div 
-                  key={`${item.id}-${item.selectedWeight}`}
+                <div
+                  key={item.cartItemId}
                   className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-lg border border-[#E6B65C]/20"
                 >
                   <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
                     {/* Product Image */}
                     <div className="w-full sm:w-24 md:w-32 h-24 md:h-32 bg-[#FAF7F2] rounded-lg md:rounded-2xl p-3 md:p-4 flex-shrink-0">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-contain"
                       />
@@ -97,7 +97,7 @@ export function CartPage() {
                         {/* Quantity Selector */}
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => updateQuantity(item.id, item.selectedWeight, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
                             className="w-8 h-8 bg-[#FAF7F2] rounded-full border border-[#E6B65C]/20 flex items-center justify-center hover:bg-white transition-colors"
                           >
                             <Minus className="w-3 h-3 md:w-4 md:h-4 text-[#6B4A1E]" />
@@ -106,7 +106,7 @@ export function CartPage() {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.selectedWeight, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
                             className="w-8 h-8 bg-[#FAF7F2] rounded-full border border-[#E6B65C]/20 flex items-center justify-center hover:bg-white transition-colors"
                           >
                             <Plus className="w-3 h-3 md:w-4 md:h-4 text-[#6B4A1E]" />
@@ -116,17 +116,17 @@ export function CartPage() {
                         {/* Price */}
                         <div className="text-right sm:text-left">
                           <p className="text-xl md:text-2xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-                            PKR {item.price * item.quantity}
+                            PKR {(item.price * item.quantity).toLocaleString('en-PK')}
                           </p>
                           <p className="text-xs md:text-sm text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                            PKR {item.price} each
+                            PKR {item.price.toLocaleString('en-PK')} each
                           </p>
                         </div>
                       </div>
 
                       {/* Remove Button */}
                       <button
-                        onClick={() => removeFromCart(item.id, item.selectedWeight)}
+                        onClick={() => removeFromCart(item.cartItemId)}
                         className="flex items-center gap-2 text-xs md:text-sm text-red-600 hover:text-red-700 transition-colors pt-2"
                         style={{ fontFamily: 'Poppins, sans-serif' }}
                       >
@@ -152,7 +152,7 @@ export function CartPage() {
                       Subtotal
                     </span>
                     <span className="text-[#6B4A1E]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                      PKR {subtotal}
+                      PKR {subtotal.toLocaleString('en-PK')}
                     </span>
                   </div>
 
@@ -161,15 +161,11 @@ export function CartPage() {
                       Delivery Charges
                     </span>
                     <span className="text-[#6B4A1E]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                      {deliveryCharges === 0 ? 'FREE' : `PKR ${deliveryCharges}`}
+                      {deliveryCharges === 0 ? 'FREE' : `PKR ${deliveryCharges.toLocaleString('en-PK')}`}
                     </span>
                   </div>
 
-                  {subtotal < 2000 && (
-                    <p className="text-xs md:text-sm text-[#5F6B3C] bg-[#E6B65C]/10 p-2 md:p-3 rounded-xl" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                      Add PKR {2000 - subtotal} more to get FREE delivery!
-                    </p>
-                  )}
+
 
                   <div className="border-t border-[#E6B65C]/20 pt-3 md:pt-4">
                     <div className="flex justify-between items-center">
@@ -177,7 +173,7 @@ export function CartPage() {
                         Total
                       </span>
                       <span className="text-2xl md:text-3xl text-[#5F6B3C]" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        PKR {total}
+                        PKR {total.toLocaleString('en-PK')}
                       </span>
                     </div>
                   </div>

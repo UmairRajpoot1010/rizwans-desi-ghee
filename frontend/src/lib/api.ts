@@ -64,7 +64,9 @@ export const authApi = {
     ),
 
   getMe: () =>
-    api.get<ApiResponse<{ _id: string; id?: string; name: string; email: string; role?: string }>>('/auth/me'),
+    api.get<ApiResponse<{ _id: string; id?: string; name: string; email: string; role?: string; phone?: string; address?: any }>>('/auth/me'),
+  updateProfile: (data: { name?: string; phone?: string; address?: any }) =>
+    api.put<ApiResponse<{ _id: string; name: string; email: string; phone?: string; address?: any }>>('/auth/me', data),
   google: (idToken: string) => api.post('/auth/google', { idToken }),
 };
 
@@ -105,6 +107,12 @@ export const ordersApi = {
 
   getById: (id: string) =>
     api.get<ApiResponse<Order>>(`/orders/${id}`),
+
+  updateOrderShipping: (id: string, shippingAddress: Partial<ShippingAddress>) =>
+    api.put<ApiResponse<Order>>(`/orders/${id}/shipping`, shippingAddress),
+
+  cancelOrder: (id: string) =>
+    api.put<ApiResponse<Order>>(`/orders/${id}/cancel`),
 };
 
 export type ApiProduct = {

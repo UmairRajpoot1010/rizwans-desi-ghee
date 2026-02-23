@@ -2,7 +2,7 @@ import { Home, ShoppingBag, ShoppingCart, User, MessageCircle } from 'lucide-rea
 import { useApp } from '@/app/context/app-context';
 
 export function MobileBottomBar() {
-  const { setCurrentPage, currentPage, cart, isAuthenticated } = useApp();
+  const { setCurrentPage, currentPage, cart, isAuthenticated, setIsAuthOpen, setAuthMode } = useApp();
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -32,18 +32,16 @@ export function MobileBottomBar() {
               setCurrentPage('home');
               window.scrollTo(0, 0);
             }}
-            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors ${
-              isActive('home') 
-                ? 'bg-[#E6B65C]/10' 
-                : 'hover:bg-[#FAF7F2]'
-            }`}
+            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors ${isActive('home')
+              ? 'bg-[#E6B65C]/10'
+              : 'hover:bg-[#FAF7F2]'
+              }`}
             aria-label="Home"
             aria-current={isActive('home') ? 'page' : undefined}
           >
             <Home className={`w-6 h-6 ${isActive('home') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'}`} />
-            <span className={`text-xs font-medium ${
-              isActive('home') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
-            }`}>
+            <span className={`text-xs font-medium ${isActive('home') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
+              }`}>
               Home
             </span>
           </button>
@@ -54,18 +52,16 @@ export function MobileBottomBar() {
               setCurrentPage('shop');
               window.scrollTo(0, 0);
             }}
-            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors ${
-              isActive('shop') 
-                ? 'bg-[#E6B65C]/10' 
-                : 'hover:bg-[#FAF7F2]'
-            }`}
+            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors ${isActive('shop')
+              ? 'bg-[#E6B65C]/10'
+              : 'hover:bg-[#FAF7F2]'
+              }`}
             aria-label="Shop"
             aria-current={isActive('shop') ? 'page' : undefined}
           >
             <ShoppingBag className={`w-6 h-6 ${isActive('shop') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'}`} />
-            <span className={`text-xs font-medium ${
-              isActive('shop') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
-            }`}>
+            <span className={`text-xs font-medium ${isActive('shop') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
+              }`}>
               Shop
             </span>
           </button>
@@ -76,11 +72,10 @@ export function MobileBottomBar() {
               setCurrentPage('cart');
               window.scrollTo(0, 0);
             }}
-            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors relative ${
-              isActive('cart') 
-                ? 'bg-[#E6B65C]/10' 
-                : 'hover:bg-[#FAF7F2]'
-            }`}
+            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors relative ${isActive('cart')
+              ? 'bg-[#E6B65C]/10'
+              : 'hover:bg-[#FAF7F2]'
+              }`}
             aria-label={`Cart${cartItemCount > 0 ? ` (${cartItemCount} items)` : ''}`}
             aria-current={isActive('cart') ? 'page' : undefined}
           >
@@ -92,9 +87,8 @@ export function MobileBottomBar() {
                 </span>
               )}
             </div>
-            <span className={`text-xs font-medium ${
-              isActive('cart') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
-            }`}>
+            <span className={`text-xs font-medium ${isActive('cart') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
+              }`}>
               Cart
             </span>
           </button>
@@ -102,21 +96,24 @@ export function MobileBottomBar() {
           {/* Account/Profile */}
           <button
             onClick={() => {
-              setCurrentPage(isAuthenticated ? 'profile' : 'home');
+              if (isAuthenticated) {
+                setCurrentPage('profile');
+              } else {
+                setAuthMode('login');
+                setIsAuthOpen(true);
+              }
               window.scrollTo(0, 0);
             }}
-            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors ${
-              isActive('profile') 
-                ? 'bg-[#E6B65C]/10' 
-                : 'hover:bg-[#FAF7F2]'
-            }`}
+            className={`flex flex-col items-center gap-1 py-3 px-2 rounded-lg transition-colors ${isActive('profile')
+              ? 'bg-[#E6B65C]/10'
+              : 'hover:bg-[#FAF7F2]'
+              }`}
             aria-label={isAuthenticated ? 'Profile' : 'Account'}
             aria-current={isActive('profile') ? 'page' : undefined}
           >
             <User className={`w-6 h-6 ${isActive('profile') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'}`} />
-            <span className={`text-xs font-medium ${
-              isActive('profile') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
-            }`}>
+            <span className={`text-xs font-medium ${isActive('profile') ? 'text-[#5F6B3C]' : 'text-[#6B4A1E]'
+              }`}>
               {isAuthenticated ? 'Profile' : 'Account'}
             </span>
           </button>

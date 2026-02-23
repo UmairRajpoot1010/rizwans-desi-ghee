@@ -1,14 +1,14 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode, useCallback } from 'react';
 import { authApi, getErrorMessage } from '@/lib/api';
 import { AxiosError } from 'axios';
 
 export type Product = {
   id: string;
   name: string;
-  weight: string;
   price: number;
+  weight: string;
   image: string;
   description: string;
   rating: number;
@@ -17,6 +17,7 @@ export type Product = {
 };
 
 export type CartItem = Product & {
+  cartItemId: string;
   quantity: number;
   selectedWeight: string;
 };
@@ -39,8 +40,8 @@ type AppContextType = {
   setSelectedOrderId: (id: string | null) => void;
   cart: CartItem[];
   addToCart: (product: Product, quantity: number, weight: string) => void;
-  removeFromCart: (id: string, weight: string) => void;
-  updateQuantity: (id: string, weight: string, quantity: number) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
   selectedProduct: Product | null;
   setSelectedProduct: (product: Product | null) => void;
@@ -56,6 +57,12 @@ type AppContextType = {
   login: (email: string, password: string) => Promise<AuthResult>;
   signup: (name: string, email: string, password: string) => Promise<AuthResult>;
   logout: () => void;
+  updateUser: (userData: Partial<AuthUser>) => void;
+
+  isAuthOpen: boolean;
+  setIsAuthOpen: (open: boolean) => void;
+  authMode: 'login' | 'signup';
+  setAuthMode: (mode: 'login' | 'signup') => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -78,6 +85,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [favourites, setFavourites] = useState<Product[]>([]);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -137,11 +146,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const res = await authApi.login(email, password);
           const payload = res.data;
           if (!payload?.success || !payload?.data) {
-        setUser(null);
-        if (typeof window !== 'undefined') {
-          // Redirect to home page after sign out
-          window.location.href = '/';
-        }
+            setUser(null);
+            if (typeof window !== 'undefined') {
+              // Redirect to home page after sign out
+              window.location.href = '/';
+            }
           }
           const { token, user: u } = payload.data;
           if (!token || !u) {
@@ -206,6 +215,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const updateUser = useCallback((userData: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...userData };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(USER_KEY, JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, []);
+
   const addToCart = (product: Product, quantity: number, weight: string) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find(
@@ -220,27 +240,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
         );
       }
 
-      return [...prevCart, { ...product, quantity, selectedWeight: weight }];
+      return [
+        ...prevCart,
+        {
+          ...product,
+          cartItemId: `${product.id}-${weight}-${Date.now()}`,
+          quantity,
+          selectedWeight: weight,
+        },
+      ];
     });
   };
 
-  const removeFromCart = (id: string, weight: string) => {
-    setCart((prevCart) =>
-      prevCart.filter((item) => !(item.id === id && item.selectedWeight === weight))
-    );
+  const removeFromCart = (cartItemId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.cartItemId !== cartItemId));
   };
 
-  const updateQuantity = (id: string, weight: string, quantity: number) => {
+  const updateQuantity = (cartItemId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(id, weight);
+      removeFromCart(cartItemId);
       return;
     }
 
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === id && item.selectedWeight === weight
-          ? { ...item, quantity }
-          : item
+        item.cartItemId === cartItemId ? { ...item, quantity } : item
       )
     );
   };
@@ -273,6 +297,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         login,
         signup,
         logout,
+        updateUser,
+        isAuthOpen,
+        setIsAuthOpen,
+        authMode,
+        setAuthMode,
       }}
     >
       {children}

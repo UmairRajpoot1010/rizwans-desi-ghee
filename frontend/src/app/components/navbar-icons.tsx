@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Heart, ShoppingCart, User } from 'lucide-react';
 import { useApp } from '@/app/context/app-context';
-import { AuthPanel } from '@/app/components/auth-panel';
 
 type Props = {
   onNavigate: (page: string) => void;
@@ -37,7 +36,7 @@ function Badge({ count }: { count: number }) {
 }
 
 export function NavbarIcons({ onNavigate }: Props) {
-  const { cart, favourites, isAuthenticated, user, logout } = useApp();
+  const { cart, favourites, isAuthenticated, user, logout, isAuthOpen, setIsAuthOpen, setAuthMode } = useApp();
 
   const cartItemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
@@ -45,9 +44,7 @@ export function NavbarIcons({ onNavigate }: Props) {
   );
 
   const [searchOpen, setSearchOpen] = useState(false);
-  const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [cartOpen, setCartOpen] = useState(false);
 
   const userButtonRef = useRef<HTMLButtonElement>(null);
@@ -70,7 +67,7 @@ export function NavbarIcons({ onNavigate }: Props) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       // ESC closes any open overlay/popup.
-      setAuthOpen(false);
+      setIsAuthOpen(false);
       setCartOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
@@ -79,13 +76,13 @@ export function NavbarIcons({ onNavigate }: Props) {
 
   useEffect(() => {
     // Ensure only one overlay is open at a time for clean UX.
-    if (authOpen) {
+    if (isAuthOpen) {
       setCartOpen(false);
     }
-  }, [authOpen]);
+  }, [isAuthOpen]);
   useEffect(() => {
     if (cartOpen) {
-      setAuthOpen(false);
+      setIsAuthOpen(false);
     }
   }, [cartOpen]);
 
@@ -105,7 +102,7 @@ export function NavbarIcons({ onNavigate }: Props) {
               return;
             }
             setAuthMode('login');
-            setAuthOpen(true);
+            setIsAuthOpen(true);
           }}
           className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-800 transition-transform duration-200 hover:scale-105 hover:text-[#F4B400]"
         >
@@ -132,8 +129,6 @@ export function NavbarIcons({ onNavigate }: Props) {
               type="button"
               onClick={() => {
                 setUserMenuOpen(false);
-                // navigate to profile
-                // `onNavigate` prop comes from Header
                 onNavigate('profile');
               }}
               className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-50"
@@ -153,14 +148,6 @@ export function NavbarIcons({ onNavigate }: Props) {
           </div>
         </div>
       </div>
-
-      {/* Slide-in Auth panel (Login/Signup) */}
-      <AuthPanel
-        open={authOpen}
-        mode={authMode}
-        onClose={() => setAuthOpen(false)}
-        onModeChange={setAuthMode}
-      />
 
       {/* Wishlist / Favourites */}
       <button

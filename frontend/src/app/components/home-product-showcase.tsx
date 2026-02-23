@@ -10,9 +10,9 @@ import bottle1kg from '@/assets/1KG.png';
 import bottle2kg from '@/assets/2KG.png';
 
 const WEIGHT_OPTIONS = [
-  { id: '500g', label: '500g', image: bottle500g.src, price: 3500 },
-  { id: '1kg', label: '1KG', image: bottle1kg.src, price: 6800 },
-  { id: '2kg', label: '2KG', image: bottle2kg.src, price: 13000 },
+  { id: '500g', label: '500g', image: bottle500g.src, price: 1500 },
+  { id: '1kg', label: '1KG', image: bottle1kg.src, price: 3000 },
+  { id: '2kg', label: '2KG', image: bottle2kg.src, price: 6000 },
 ];
 
 export function HomeProductShowcase() {
@@ -39,7 +39,7 @@ export function HomeProductShowcase() {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product, quantity, product.weight);
+      addToCart({ ...product, price: currentPrice }, quantity, activeWeight.id);
     }
   };
 
@@ -108,11 +108,10 @@ export function HomeProductShowcase() {
                   type="button"
                   onClick={handleToggleWishlist}
                   aria-label="Add to wishlist"
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm shadow-sm transition-colors ${
-                    inWishlist
-                      ? 'border-[#E6B65C] bg-[#E6B65C]/10 text-[#5F6B3C]'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm shadow-sm transition-colors ${inWishlist
+                    ? 'border-[#E6B65C] bg-[#E6B65C]/10 text-[#5F6B3C]'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   <Heart
                     className={`h-4 w-4 ${inWishlist ? 'fill-[#E6B65C] text-[#E6B65C]' : ''}`}
@@ -140,7 +139,7 @@ export function HomeProductShowcase() {
           {/* Right: Product details */}
           <div className="space-y-5">
             <h2 className="text-2xl font-semibold text-[#6B4A1E] sm:text-3xl lg:text-4xl">
-              {product.name} | 30 Days Money Back Guarantee
+              {product.name.replace(/\s*2\s*kg\s*(jar)?/gi, '').trim()} | 7 Days Money Back Guarantee
             </h2>
 
             <div className="flex items-end gap-3">
@@ -171,11 +170,10 @@ export function HomeProductShowcase() {
                   key={weight.id}
                   type="button"
                   onClick={() => setSelectedWeightId(weight.id)}
-                  className={`min-w-[64px] rounded-md px-4 py-2 text-xs font-medium uppercase tracking-wide transition ${
-                    selectedWeightId === weight.id
-                      ? 'bg-[#5F6B3C] text-white shadow-sm'
-                      : 'bg-white text-[#6B4A1E] ring-1 ring-gray-200 hover:bg-[#FAF7F2]'
-                  }`}
+                  className={`min-w-[64px] rounded-md px-4 py-2 text-xs font-medium uppercase tracking-wide transition ${selectedWeightId === weight.id
+                    ? 'bg-[#5F6B3C] text-white shadow-sm'
+                    : 'bg-white text-[#6B4A1E] ring-1 ring-gray-200 hover:bg-[#FAF7F2]'
+                    }`}
                 >
                   {weight.label}
                 </button>
@@ -223,11 +221,10 @@ export function HomeProductShowcase() {
               <button
                 type="button"
                 onClick={handleToggleWishlist}
-                className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm shadow-sm transition ${
-                  inWishlist
-                    ? 'border-[#E6B65C] bg-[#E6B65C]/10 text-[#5F6B3C]'
-                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm shadow-sm transition ${inWishlist
+                  ? 'border-[#E6B65C] bg-[#E6B65C]/10 text-[#5F6B3C]'
+                  : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
                 aria-label="Toggle wishlist"
               >
                 <Heart
@@ -250,17 +247,14 @@ export function HomeProductShowcase() {
                 <span className="font-semibold text-[#6B4A1E]">Weight: </span>
                 {formattedWeightList}
               </p>
-              <p>
-                <span className="font-semibold text-[#6B4A1E]">SKU: </span>
-                {sku}
-              </p>
+
               <p>
                 <span className="font-semibold text-[#6B4A1E]">Availability: </span>
                 In Stock
               </p>
               <p>
-                <span className="font-semibold text-[#6B4A1E]">Categories: </span>
-                {product.weight || 'Pure Desi Ghee'}
+                <span className="font-semibold text-[#6B4A1E]">Category: </span>
+                Desi Ghee
               </p>
             </div>
           </div>

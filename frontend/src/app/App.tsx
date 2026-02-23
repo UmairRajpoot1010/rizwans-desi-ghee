@@ -15,9 +15,10 @@ import { AboutPage } from './pages/about-page';
 import { ContactPage } from './pages/contact-page';
 import { FavouritesPage } from './pages/favourites-page';
 import { OrderDetailPage } from './pages/order-detail-page';
+import { AuthPanel } from './components/auth-panel';
 
 function AppContent() {
-  const { currentPage, selectedOrderId } = useApp();
+  const { currentPage, selectedOrderId, isAuthOpen, setIsAuthOpen, authMode, setAuthMode } = useApp();
 
   const renderPage = () => {
     switch (currentPage) {
@@ -56,6 +57,13 @@ function AppContent() {
       </main>
       <Footer />
       <MobileBottomBar />
+
+      <AuthPanel
+        open={isAuthOpen}
+        mode={authMode}
+        onClose={() => setIsAuthOpen(false)}
+        onModeChange={setAuthMode}
+      />
     </div>
   );
 }

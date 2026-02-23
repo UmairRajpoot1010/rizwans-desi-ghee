@@ -39,10 +39,10 @@ export function Header() {
             src={logo}
             alt="Rizwan's Desi Ghee logo"
             priority
-            width={160}
-            height={160}
-            sizes="(max-width: 768px) 140px, 180px"
-            className="h-10 w-auto md:h-12 object-contain drop-shadow-md origin-left transition-transform duration-300 group-hover:scale-105"
+            width={240}
+            height={240}
+            sizes="(max-width: 768px) 180px, 240px"
+            className="h-14 w-auto md:h-20 object-contain drop-shadow-md origin-left transition-transform duration-300 group-hover:scale-105"
           />
           <span className="flex items-center gap-1 text-xl md:text-2xl font-semibold tracking-tight text-[#E6B65C] font-heading">
             Rizwan&apos;s Desi Ghee
@@ -58,11 +58,10 @@ export function Header() {
             <button
               key={item.page}
               onClick={() => navigate(item.page)}
-              className={`relative pb-1 text-sm md:text-base font-medium transition-colors duration-200 border-b-2 ${
-                currentPage === item.page
+              className={`relative pb-1 text-sm md:text-base font-medium transition-colors duration-200 border-b-2 ${currentPage === item.page
                   ? 'text-[#E6B65C] border-[#E6B65C]'
                   : 'text-[#6B4A1E] border-transparent hover:text-[#E6B65C] hover:border-[#E6B65C]'
-              }`}
+                }`}
             >
               {item.label}
             </button>
@@ -92,11 +91,10 @@ export function Header() {
             <button
               key={item.page}
               onClick={() => navigate(item.page)}
-              className={`block w-full text-left py-2 text-sm font-medium transition-colors ${
-                currentPage === item.page
+              className={`block w-full text-left py-2 text-sm font-medium transition-colors ${currentPage === item.page
                   ? 'text-[#E6B65C]'
                   : 'text-[#6B4A1E] hover:text-[#E6B65C]'
-              }`}
+                }`}
             >
               {item.label}
             </button>
