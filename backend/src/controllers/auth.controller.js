@@ -163,6 +163,42 @@ exports.getMe = async (req, res, next) => {
   }
 }
 
+// @desc    Update current user profile
+// @route   PUT /api/auth/me
+// @access  Private
+exports.updateMe = async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return sendResponse(res, 401, { success: false, message: 'Not authenticated' })
+    }
+
+    const { name, phone, address } = req.body
+
+    // Build update object
+    const updateData = {}
+    if (name) updateData.name = name
+    if (phone !== undefined) updateData.phone = phone
+    if (address !== undefined) updateData.address = address
+
+    const user = await User.findByIdAndUpdate(req.user.id, updateData, {
+      new: true,
+      runValidators: true,
+    }).select('-password')
+
+    if (!user) {
+      return sendResponse(res, 404, { success: false, message: 'User not found' })
+    }
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Profile updated successfully',
+      data: user,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 // @desc    Google Sign-In (ID token)
 // @route   POST /api/auth/google
 // @access  Public

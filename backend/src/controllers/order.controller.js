@@ -68,6 +68,13 @@ exports.createOrder = async (req, res, next) => {
         })
       }
 
+      if (!item.size) {
+        return sendResponse(res, 400, {
+          success: false,
+          message: 'Product size is required',
+        })
+      }
+
       const product = await Product.findById(item.product)
       if (!product) {
         return sendResponse(res, 404, {
@@ -90,13 +97,22 @@ exports.createOrder = async (req, res, next) => {
         })
       }
 
+      const unitPrice = product.getPriceForSize(item.size)
+      if (!unitPrice) {
+        return sendResponse(res, 400, {
+          success: false,
+          message: `Size ${item.size} not available for ${product.name}`,
+        })
+      }
+
       orderItems.push({
         product: product._id,
+        size: item.size,
         quantity: item.quantity,
-        price: product.price,
+        price: unitPrice,
       })
 
-      totalAmount += product.price * item.quantity
+      totalAmount += unitPrice * item.quantity
 
       product.stock -= item.quantity
       if (product.stock < 0) {
@@ -283,6 +299,88 @@ exports.getOrderById = async (req, res, next) => {
       success: true,
       message: 'Order fetched successfully',
       data: order,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// @desc    Update order shipping info (User only)
+// @route   PUT /api/orders/:id/shipping
+// @access  Private
+exports.updateMyOrderShipping = async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const { phone, address, city, state, zipCode, email, name } = req.body
+
+    const order = await Order.findById(id)
+    if (!order) return sendResponse(res, 404, { success: false, message: 'Order not found' })
+
+    const userId = req.user?._id || req.user?.id
+    if (order.user.toString() !== userId.toString()) {
+      return sendResponse(res, 403, { success: false, message: 'Not authorized' })
+    }
+
+    // Only allow updating if order is pending or processing
+    if (!['pending', 'processing'].includes(order.status)) {
+      return sendResponse(res, 400, { success: false, message: `Cannot update shipping details for a ${order.status} order` })
+    }
+
+    // Update details
+    if (phone !== undefined) order.shippingAddress.phone = phone
+    if (address !== undefined) order.shippingAddress.address = address
+    if (city !== undefined) order.shippingAddress.city = city
+    if (state !== undefined) order.shippingAddress.state = state
+    if (zipCode !== undefined) order.shippingAddress.zipCode = zipCode
+    if (email !== undefined) order.shippingAddress.email = email
+    if (name !== undefined) order.shippingAddress.name = name
+
+    await order.save()
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Order shipping details updated successfully',
+      data: order,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// @desc    Cancel order (User only) - Performs a hard delete to remove from profile
+// @route   PUT /api/orders/:id/cancel
+// @access  Private
+exports.cancelMyOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    const order = await Order.findById(id)
+    if (!order) return sendResponse(res, 404, { success: false, message: 'Order not found' })
+
+    const userId = req.user?._id || req.user?.id
+    if (order.user.toString() !== userId.toString()) {
+      return sendResponse(res, 403, { success: false, message: 'Not authorized' })
+    }
+
+    if (!order.canCancel()) {
+      return sendResponse(res, 400, { success: false, message: `Order cannot be cancelled because its status is ${order.status}` })
+    }
+
+    // Restock the items
+    for (const item of order.items) {
+      const product = await Product.findById(item.product)
+      if (product) {
+        product.stock += item.quantity
+        await product.save()
+      }
+    }
+
+    // Instead of setting status to 'cancelled', we delete the order as requested
+    await Order.findByIdAndDelete(id)
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: 'Order cancelled and removed successfully',
     })
   } catch (error) {
     next(error)

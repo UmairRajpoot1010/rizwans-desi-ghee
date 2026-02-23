@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { Schema } = mongoose
 
 const productSchema = new mongoose.Schema(
   {
@@ -17,14 +18,8 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Product price is required'],
       min: [0, 'Price must be positive'],
-      validate: {
-        validator: function (value) {
-          return value >= 0 && !isNaN(value)
-        },
-        message: 'Price must be a positive number',
-      },
     },
-    // v1.0: Image URLs as strings. TODO: Cloudinary/S3 integration for uploads
+    weight: String,
     images: {
       type: [String],
       required: [true, 'At least one product image is required'],
@@ -53,6 +48,20 @@ const productSchema = new mongoose.Schema(
         message: 'Stock must be an integer',
       },
     },
+    variants: [
+      {
+        size: {
+          type: String,
+          required: [true, 'Variant size is required'],
+          trim: true,
+        },
+        price: {
+          type: Number,
+          required: [true, 'Variant price is required'],
+          min: [0, 'Price must be positive'],
+        },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,
@@ -69,13 +78,35 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ name: 'text', description: 'text' }) // Text search index
 productSchema.index({ category: 1 }) // Category index
 productSchema.index({ isActive: 1 }) // Active products filter
-productSchema.index({ price: 1 }) // Price sorting
 productSchema.index({ createdAt: -1 }) // Latest products
+
+// Virtual for base price (1kg if available, otherwise first variant)
+productSchema.virtual('basePrice').get(function () {
+  if (!this.variants || this.variants.length === 0) return 0
+  const baseVariant = this.variants.find((v) => v.size.replace(/\s/g, '').toLowerCase() === '1kg')
+  return baseVariant ? baseVariant.price : this.variants[0].price
+})
 
 // Virtual for checking if product is in stock
 productSchema.virtual('inStock').get(function () {
   return this.stock > 0
 })
+
+// Method to get price for specific size
+productSchema.methods.getPriceForSize = function (size) {
+  if (!size) return null
+
+  const normalizedRequestedSize = size.replace(/\s/g, '').toLowerCase()
+
+  if (!this.variants || this.variants.length === 0) {
+    // Fallback to fixed prices if variants not defined
+    const FIXED_PRICES = { '500g': 1500, '1kg': 3000, '2kg': 6000 }
+    return FIXED_PRICES[normalizedRequestedSize] || null
+  }
+
+  const variant = this.variants.find((v) => v.size.replace(/\s/g, '').toLowerCase() === normalizedRequestedSize)
+  return variant ? variant.price : null
+}
 
 // Method to check if product has sufficient stock
 productSchema.methods.hasStock = function (quantity) {

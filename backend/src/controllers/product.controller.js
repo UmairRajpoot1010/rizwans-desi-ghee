@@ -3,6 +3,19 @@ const Product = require('../models/Product')
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id)
 
+// Fixed prices for each size (normalized keys)
+const FIXED_PRICES = {
+  '500g': 1500,
+  '1kg': 3000,
+  '2kg': 6000,
+}
+
+const getPriceForSize = (size) => {
+  if (!size) return null
+  const normalized = size.replace(/\s/g, '').toLowerCase()
+  return FIXED_PRICES[normalized] || null
+}
+
 const sendResponse = (res, statusCode, { success, message, data, meta }) => {
   const payload = { success, message }
   if (data !== undefined) payload.data = data
@@ -150,15 +163,15 @@ exports.searchProducts = async (req, res, next) => {
 // @desc    Create new product
 // @route   POST /api/products
 // @access  Private (Admin)
-// Images: v1.0 accepts URL strings. TODO: Add Cloudinary/S3 upload endpoint.
+// Images: v1.0 accepts only uploads (no URLs).
 exports.createProduct = async (req, res, next) => {
   try {
-    const { name, description, price, images, category, stock, isActive } = req.body
+    const { name, description, images, category, stock, isActive, variants } = req.body
 
-    if (!name || price === undefined) {
+    if (!name || !variants || !Array.isArray(variants) || variants.length === 0) {
       return sendResponse(res, 400, {
         success: false,
-        message: 'Product name and price are required',
+        message: 'Product name and at least one product size are required',
       })
     }
 
@@ -177,12 +190,31 @@ exports.createProduct = async (req, res, next) => {
       })
     }
 
+    // Convert variant sizes to variant objects with fixed prices
+    let variantList = variants
+      .map((size) => ({
+        original: size,
+        price: getPriceForSize(size)
+      }))
+      .filter((v) => v.price !== null)
+      .map((v) => ({
+        size: v.original,
+        price: v.price,
+      }))
+
+    if (variantList.length === 0) {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Invalid product sizes. Available sizes: 500g, 1kg, 2kg',
+      })
+    }
+
     const product = await Product.create({
       name: name.trim(),
       description,
-      price,
       images,
       category,
+      variants: variantList,
       stock: stock || 0,
       isActive: isActive !== undefined ? isActive : true,
     })
@@ -203,7 +235,7 @@ exports.createProduct = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params
-    const { name, description, price, images, category, stock, isActive } = req.body
+    const { name, description, images, category, stock, isActive, variants } = req.body
 
     if (!isValidObjectId(id)) {
       return sendResponse(res, 400, {
@@ -230,11 +262,26 @@ exports.updateProduct = async (req, res, next) => {
 
     if (name !== undefined) product.name = name
     if (description !== undefined) product.description = description
-    if (price !== undefined) product.price = price
     if (images !== undefined) product.images = images
     if (category !== undefined) product.category = category
     if (stock !== undefined) product.stock = stock
     if (isActive !== undefined) product.isActive = isActive
+
+    if (variants !== undefined && Array.isArray(variants)) {
+      let variantList = variants
+        .map((size) => ({
+          original: size,
+          price: getPriceForSize(size)
+        }))
+        .filter((v) => v.price !== null)
+        .map((v) => ({
+          size: v.original,
+          price: v.price,
+        }))
+      if (variantList.length > 0) {
+        product.variants = variantList
+      }
+    }
 
     if (product.stock < 0) {
       return sendResponse(res, 400, {

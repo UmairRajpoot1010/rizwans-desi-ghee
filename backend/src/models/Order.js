@@ -7,6 +7,11 @@ const orderItemSchema = new mongoose.Schema(
       ref: 'Product',
       required: [true, 'Product reference is required'],
     },
+    size: {
+      type: String,
+      required: [true, 'Product size is required'],
+      trim: true,
+    },
     quantity: {
       type: Number,
       required: [true, 'Quantity is required'],
@@ -179,7 +184,7 @@ orderSchema.pre('save', function (next) {
     const calculatedTotal = this.items.reduce((total, item) => {
       return total + item.quantity * item.price
     }, 0)
-    
+
     // Only update if totalAmount is not set or differs significantly (allowing for rounding)
     if (!this.totalAmount || Math.abs(this.totalAmount - calculatedTotal) > 0.01) {
       this.totalAmount = calculatedTotal

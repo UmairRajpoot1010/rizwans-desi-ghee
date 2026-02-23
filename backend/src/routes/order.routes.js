@@ -29,6 +29,8 @@ const {
   createOrder,
   getMyOrders,
   getOrderById,
+  updateMyOrderShipping,
+  cancelMyOrder,
 } = require('../controllers/order.controller')
 
 /**
@@ -57,5 +59,7 @@ const parseJsonFormFields = (req, res, next) => {
 router.post('/', protect, upload.single('paymentScreenshot'), parseJsonFormFields, validateOrder, createOrder)
 router.get('/my', protect, getMyOrders)
 router.get('/:id', protect, getOrderById)
+router.put('/:id/shipping', protect, updateMyOrderShipping)
+router.put('/:id/cancel', protect, cancelMyOrder)
 
 module.exports = router
