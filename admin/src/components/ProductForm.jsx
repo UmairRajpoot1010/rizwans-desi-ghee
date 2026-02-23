@@ -152,6 +152,8 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               placeholder="Product description"
             />
           </div>
+          
+          {/* VARIANT SELECTION */}
           <div className="form-row">
             <div className="form-group">
               <label>Price (₹) *</label>
@@ -229,17 +231,6 @@ export default function ProductForm({ product, onClose, onSuccess }) {
                   ))}
                 </div>
               )}
-
-              <div className="image-url-fallback">
-                <label>Or paste image URLs (one per line) *</label>
-                <textarea
-                  value={imageUrls}
-                  onChange={handleImageInput}
-                  rows={2}
-                  placeholder="https://example.com/image1.jpg"
-                />
-                <small>If no photos are uploaded, URLs will be used instead</small>
-              </div>
             </div>
           </div>
           <div className="form-group form-check">
