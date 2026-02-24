@@ -51,17 +51,22 @@ export const adminApi = {
 
   getMe: () => api.get('/admin/auth/me'),
 
+  // Dashboard
   getStats: () => api.get('/admin/dashboard/stats'),
 
+  // Products
   getProducts: () => api.get('/admin/products'),
   createProduct: (data) => api.post('/admin/products', data),
   updateProduct: (id, data) => api.put(`/admin/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
 
+  // Orders
   getOrders: (params) => api.get('/admin/orders', { params }),
   updateOrderStatus: (id, data) => api.put(`/admin/orders/${id}`, data),
   verifyOrder: (id, status) => api.patch(`/admin/orders/${id}/verify`, { status }),
+  deleteOrder: (id) => api.delete(`/admin/orders/${id}`),
 
+  // Users
   getUsers: () => api.get('/admin/users'),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),

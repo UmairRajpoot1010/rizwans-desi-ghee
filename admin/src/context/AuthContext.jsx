@@ -71,13 +71,19 @@ export function AuthProvider({ children }) {
       const res = await adminApi.login(email, password)
       const payload = res?.data
       const data = payload?.data
+
+      console.log('Login Response:', { success: payload?.success, role: data?.admin?.role })
+
       if (!payload?.success || !data?.token || !data?.admin) {
         return { success: false, message: payload?.message ?? 'Login failed' }
       }
-      const role = (data.admin?.role || '').toLowerCase()
+
+      const role = String(data.admin?.role || '').toLowerCase()
       if (role !== 'admin' && role !== 'superadmin') {
+        console.error('Access Denied: Invalid role', role)
         return { success: false, message: 'Access denied. Admin or superadmin role required.' }
       }
+
       localStorage.setItem('adminToken', data.token)
       localStorage.setItem('adminUser', JSON.stringify(data.admin))
       setAdmin(data.admin)
