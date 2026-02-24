@@ -75,6 +75,16 @@ export function CheckoutPage() {
 
     setSubmitting(true);
     try {
+      let base64Screenshot: string | null = null;
+      if (paymentMethod === 'online' && paymentScreenshot) {
+        base64Screenshot = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(paymentScreenshot);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (error) => reject(error);
+        });
+      }
+
       const items = cart.map((item) => ({
         product: item.id,
         quantity: item.quantity,
@@ -89,7 +99,13 @@ export function CheckoutPage() {
         state: formData.state.trim(),
         zipCode: formData.pincode.trim(),
       };
-      const res = await ordersApi.create(items, shippingAddress, paymentMethod === 'online' ? 'online' : 'cod', paymentScreenshot);
+
+      const res = await ordersApi.create(
+        items,
+        shippingAddress,
+        paymentMethod === 'online' ? 'online' : 'cod',
+        base64Screenshot
+      );
       const payload = res.data;
       if (payload?.success) {
         clearCart();

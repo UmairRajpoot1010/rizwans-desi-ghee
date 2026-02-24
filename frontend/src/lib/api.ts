@@ -86,20 +86,21 @@ export const ordersApi = {
     items: { product: string; quantity: number }[],
     shippingAddress: ShippingAddress,
     paymentMethod?: 'cod' | 'online',
-    paymentScreenshot?: File | null
+    paymentScreenshot?: string | null
   ) => {
-    // If a screenshot is provided, send as multipart/form-data
-    if (paymentScreenshot) {
-      const fd = new FormData()
-      fd.append('items', JSON.stringify(items))
-      fd.append('shippingAddress', JSON.stringify(shippingAddress))
-      fd.append('paymentMethod', (paymentMethod || 'cod').toString())
-      fd.append('paymentScreenshot', paymentScreenshot)
-      return api.post<ApiResponse<Order>>('/orders', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+    // Online payment: screenshot is sent as base64 string
+    const payload: any = {
+      items,
+      shippingAddress,
+      paymentMethod: paymentMethod || 'cod'
     }
-    return api.post<ApiResponse<Order>>('/orders', { items, shippingAddress, paymentMethod: paymentMethod || 'cod' })
+
+    if (paymentScreenshot) {
+      payload.paymentProof = paymentScreenshot
+      payload.paymentMethod = 'ONLINE'
+    }
+
+    return api.post<ApiResponse<Order>>('/orders', payload)
   },
 
   getMy: (params?: { page?: number; limit?: number; status?: string }) =>
