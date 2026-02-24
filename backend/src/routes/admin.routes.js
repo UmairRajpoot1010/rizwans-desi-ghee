@@ -23,6 +23,7 @@ const {
   getAllOrders,
   updateOrderStatus,
   deleteOrder,
+  verifyOrder,
   getAllUsers,
   updateUser,
   deleteUser,
@@ -58,6 +59,7 @@ router.delete('/products/:id', protectAdmin, deleteProduct)
 // ============================================
 router.get('/orders', protectAdmin, getAllOrders)
 router.put('/orders/:id', protectAdmin, validateOrderStatus, updateOrderStatus)
+router.patch('/orders/:id/verify', protectAdmin, verifyOrder)
 router.delete('/orders/:id', protectAdmin, deleteOrder)
 
 // ============================================

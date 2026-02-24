@@ -21,17 +21,17 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true)
-    
+
     // In development, allow all origins
     if (NODE_ENV === 'development') {
       return callback(null, true)
     }
-    
+
     // In production, use ALLOWED_ORIGINS from env
     const allowedOrigins = ALLOWED_ORIGINS
       ? ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
       : ['http://localhost:3000', 'http://localhost:3001']
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true)
     } else {
@@ -55,8 +55,8 @@ if (NODE_ENV === 'development') {
 }
 
 // Body Parser Middleware
-app.use(express.json({ limit: '10mb' })) // Limit JSON payload size
-app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+app.use(express.json({ limit: '20mb' })) // Increased limit for Base64 screenshots
+app.use(express.urlencoded({ extended: true, limit: '20mb' }))
 
 // Serve uploaded files (payment screenshots, etc.)
 const path = require('path')

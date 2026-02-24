@@ -34,7 +34,8 @@ exports.adminLogin = async (req, res, next) => {
     // Find admin by normalized email
     const admin = await Admin.findByEmail(normalizedEmail)
 
-    if (!admin || admin.role !== 'admin') {
+    const allowedRoles = ['admin', 'superadmin']
+    if (!admin || !allowedRoles.includes(admin.role)) {
       return sendResponse(res, 401, {
         success: false,
         message: 'Invalid credentials',
@@ -511,6 +512,54 @@ exports.deleteUser = async (req, res, next) => {
       success: true,
       message: 'User deleted successfully',
       data: { id: user._id },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// @desc    Verify online payment
+// @route   PATCH /api/admin/orders/:id/verify
+// @access  Private (Admin)
+exports.verifyOrder = async (req, res, next) => {
+  try {
+    const { status } = req.body // 'verified' or 'rejected'
+    const orderId = req.params.id
+
+    const order = await Order.findById(orderId)
+    if (!order) {
+      return sendResponse(res, 404, {
+        success: false,
+        message: 'Order not found',
+      })
+    }
+
+    if (order.paymentMethod !== 'ONLINE') {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Only online payment orders can be verified',
+      })
+    }
+
+    if (status === 'verified') {
+      order.paymentStatus = 'paid'
+      order.paymentVerificationStatus = 'verified'
+    } else if (status === 'rejected') {
+      order.paymentStatus = 'failed'
+      order.paymentVerificationStatus = 'rejected'
+    } else {
+      return sendResponse(res, 400, {
+        success: false,
+        message: 'Invalid verification status. Use "verified" or "rejected"',
+      })
+    }
+
+    await order.save()
+
+    return sendResponse(res, 200, {
+      success: true,
+      message: `Order payment ${status === 'verified' ? 'verified' : 'rejected'} successfully`,
+      data: order,
     })
   } catch (error) {
     next(error)

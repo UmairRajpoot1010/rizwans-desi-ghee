@@ -124,16 +124,20 @@ exports.createOrder = async (req, res, next) => {
       await product.save()
     }
 
-    // If ONLINE payment selected, require screenshot
-    let screenshotUrl = null
+    // For ONLINE payment, handle Base64 screenshot
+    let paymentProof = { data: null, uploadedAt: null }
     if (paymentMethod === 'ONLINE') {
-      if (!req.file) {
-        return sendResponse(res, 400, { success: false, message: 'Payment screenshot is required for online payments' })
+      const base64Data = req.body.paymentProof || req.body.paymentScreenshot
+      if (!base64Data) {
+        return sendResponse(res, 400, {
+          success: false,
+          message: 'Payment proof is required for online payments'
+        })
       }
-      // Build accessible URL for uploaded file
-      const host = req.get('host')
-      const proto = req.protocol
-      screenshotUrl = `${proto}://${host}/uploads/${req.file.filename}`
+      paymentProof = {
+        data: base64Data,
+        uploadedAt: new Date()
+      }
     }
 
     const order = await Order.create({
@@ -142,9 +146,9 @@ exports.createOrder = async (req, res, next) => {
       totalAmount,
       shippingAddress,
       status: 'pending',
-      paymentStatus: paymentMethod === 'COD' ? 'pending' : 'pending',
+      paymentStatus: paymentMethod === 'COD' ? 'pending' : 'unverified',
       paymentMethod,
-      paymentScreenshot: screenshotUrl,
+      paymentProof,
       paymentVerificationStatus: paymentMethod === 'ONLINE' ? 'pending' : 'pending',
     })
 

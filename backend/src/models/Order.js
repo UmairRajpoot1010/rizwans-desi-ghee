@@ -133,11 +133,12 @@ const orderSchema = new mongoose.Schema(
       default: 'pending',
     },
     // COD: pending = awaiting payment on delivery, paid = collected, failed = payment failed
+    // ONLINE: unverified = screenshot uploaded, waiting for admin; paid = admin verified; failed = admin rejected
     paymentStatus: {
       type: String,
       enum: {
-        values: ['pending', 'paid', 'failed'],
-        message: 'Payment status must be one of: pending, paid, failed',
+        values: ['pending', 'paid', 'unverified', 'failed'],
+        message: 'Payment status must be one of: pending, paid, unverified, failed',
       },
       default: 'pending',
     },
@@ -150,6 +151,18 @@ const orderSchema = new mongoose.Schema(
       },
       default: 'COD',
     },
+    // Updated for Render compatibility (Option A: Base64 in MongoDB)
+    paymentProof: {
+      data: {
+        type: String, // Base64 string
+        default: null
+      },
+      uploadedAt: {
+        type: Date,
+        default: null
+      }
+    },
+    // Keep for backward compatibility or remove if strictly following request
     paymentScreenshot: {
       type: String,
       default: null,
