@@ -6,16 +6,26 @@ const { body, param, validationResult } = require('express-validator')
  */
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req)
-  
+
   if (!errors.isEmpty()) {
+    // Log validation errors and body for debugging in production
+    console.error('⚠️ Validation Failed:', {
+      path: req.path,
+      method: req.method,
+      contentType: req.headers['content-type'],
+      errors: errors.array().map(e => ({ path: e.path, msg: e.msg })),
+      body: req.body
+    })
+
     // API contract format: { success: false, message: "Error message" }
-    const errorMessages = errors.array().map((e) => e.msg).join(', ')
+    const uniqueMessages = [...new Set(errors.array().map((e) => e.msg))]
+    const errorMessages = uniqueMessages.join(', ')
     return res.status(400).json({
       success: false,
       message: errorMessages || 'Validation failed',
     })
   }
-  
+
   next()
 }
 
@@ -153,7 +163,7 @@ const validateOrder = [
       if (!Array.isArray(items) || items.length === 0) {
         throw new Error('Order must have at least one item')
       }
-      
+
       items.forEach((item, index) => {
         if (!item.product) {
           throw new Error(`Item ${index + 1}: Product ID is required`)
@@ -170,57 +180,51 @@ const validateOrder = [
       })
       return true
     }),
+  // Resilient validation for shipping address fields
+  body('shippingAddress').notEmpty().withMessage('Shipping address information is required'),
   body('shippingAddress.name')
     .trim()
     .notEmpty()
     .withMessage('Shipping name is required')
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Shipping name must be between 2 and 100 characters')
-    .escape(),
+    .isLength({ min: 2, max: 100 }),
   body('shippingAddress.email')
     .trim()
     .notEmpty()
     .withMessage('Shipping email is required')
     .isEmail()
-    .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .withMessage('Please provide a valid email address'),
   body('shippingAddress.phone')
     .trim()
     .notEmpty()
     .withMessage('Shipping phone is required')
-    .isLength({ min: 10, max: 15 })
-    .withMessage('Phone number must be between 10 and 15 characters')
-    .matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/)
-    .withMessage('Please provide a valid phone number'),
+    .isLength({ min: 10, max: 15 }),
   body('shippingAddress.address')
     .trim()
     .notEmpty()
     .withMessage('Shipping address is required')
-    .isLength({ min: 5, max: 200 })
-    .withMessage('Address must be between 5 and 200 characters')
-    .escape(),
+    .isLength({ min: 5, max: 200 }),
   body('shippingAddress.city')
     .trim()
     .notEmpty()
-    .withMessage('Shipping city is required')
-    .isLength({ min: 2, max: 100 })
-    .withMessage('City must be between 2 and 100 characters')
-    .escape(),
+    .withMessage('Shipping city is required'),
   body('shippingAddress.state')
     .trim()
     .notEmpty()
-    .withMessage('Shipping state is required')
-    .isLength({ min: 2, max: 100 })
-    .withMessage('State must be between 2 and 100 characters')
-    .escape(),
+    .withMessage('Shipping state is required'),
   body('shippingAddress.zipCode')
     .trim()
     .notEmpty()
-    .withMessage('Shipping zip code is required')
-    .isLength({ min: 5, max: 10 })
-    .withMessage('Zip code must be between 5 and 10 characters')
-    .matches(/^[0-9-]+$/)
-    .withMessage('Zip code must contain only numbers and hyphens'),
+    .withMessage('Shipping zip code is required'),
+
+  // Payment info validation
+  body('paymentMethod')
+    .optional()
+    .isIn(['COD', 'ONLINE', 'cod', 'online'])
+    .withMessage('Invalid payment method'),
+  body('paymentProof')
+    .optional()
+    .isString()
+    .withMessage('Payment proof must be a valid base64 string'),
   handleValidationErrors,
 ]
 

@@ -30,7 +30,12 @@ const corsOptions = {
     // In production, use ALLOWED_ORIGINS from env
     const allowedOrigins = ALLOWED_ORIGINS
       ? ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-      : ['http://localhost:3000', 'http://localhost:3001']
+      : [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'https://rizwans-desi-ghee.vercel.app',
+        'https://rizwans-desi-ghee-admin.vercel.app',
+      ]
 
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true)
