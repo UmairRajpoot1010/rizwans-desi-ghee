@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rizwans-desi-ghee-backend.onrender.com/api'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -60,6 +60,7 @@ export const adminApi = {
 
   getOrders: (params) => api.get('/admin/orders', { params }),
   updateOrderStatus: (id, data) => api.put(`/admin/orders/${id}`, data),
+  verifyOrder: (id, status) => api.patch(`/admin/orders/${id}/verify`, { status }),
 
   getUsers: () => api.get('/admin/users'),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),

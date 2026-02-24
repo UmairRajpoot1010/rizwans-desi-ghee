@@ -5,7 +5,7 @@ import { adminApi } from '@/lib/api'
 import PaymentProofModal from './PaymentProofModal'
 
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
-const PAYMENT_OPTIONS = ['pending', 'paid', 'failed']
+const PAYMENT_OPTIONS = ['pending', 'paid', 'unverified', 'failed']
 const PAYMENT_VERIFICATION_OPTIONS = ['pending', 'verified', 'rejected']
 
 export default function OrderStatusModal({ order, onClose, onSuccess }) {
@@ -172,7 +172,7 @@ export default function OrderStatusModal({ order, onClose, onSuccess }) {
             )}
 
             {/* Payment Screenshot */}
-            {order.paymentScreenshot && (
+            {(order.paymentProof?.data || order.paymentScreenshot) && (
               <div className="form-group">
                 <label>Payment Proof</label>
                 <button
@@ -181,7 +181,7 @@ export default function OrderStatusModal({ order, onClose, onSuccess }) {
                   onClick={() => setShowImageModal(true)}
                 >
                   <img
-                    src={order.paymentScreenshot}
+                    src={order.paymentProof?.data || order.paymentScreenshot}
                     alt="payment"
                     className="screenshot-thumb"
                   />
@@ -223,7 +223,7 @@ export default function OrderStatusModal({ order, onClose, onSuccess }) {
       {/* Image modal */}
       {showImageModal && (
         <PaymentProofModal
-          imageUrl={order.paymentScreenshot}
+          imageUrl={order.paymentProof?.data || order.paymentScreenshot}
           onClose={() => setShowImageModal(false)}
         />
       )}

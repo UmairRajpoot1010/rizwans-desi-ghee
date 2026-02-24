@@ -96,10 +96,10 @@ export default function OrderCard({ order, onUpdate }) {
               </span>
             </div>
           )}
-          {order.paymentScreenshot && (
+          {(order.paymentProof?.data || order.paymentScreenshot) && (
             <div className="payment-screenshot">
               <a
-                href={order.paymentScreenshot}
+                href={order.paymentProof?.data || order.paymentScreenshot}
                 target="_blank"
                 rel="noreferrer"
                 className="screenshot-link"

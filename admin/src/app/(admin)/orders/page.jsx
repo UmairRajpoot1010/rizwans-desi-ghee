@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { adminApi } from '@/lib/api'
 import OrderCard from '@/components/OrderCard'
 import OrderStatusModal from '@/components/OrderStatusModal'
+import PaymentProofModal from '@/components/PaymentProofModal'
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([])
@@ -14,6 +15,7 @@ export default function OrdersPage() {
   const [paymentFilter, setPaymentFilter] = useState('')
   const [page, setPage] = useState(1)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [showPaymentProof, setShowPaymentProof] = useState(false)
 
   const fetchOrders = useCallback(
     (pageNum = 1) => {
@@ -51,7 +53,17 @@ export default function OrdersPage() {
 
   const handleStatusUpdate = () => {
     setSelectedOrder(null)
+    setShowPaymentProof(false)
     fetchOrders(page)
+  }
+
+  const handleVerify = async (orderId, status) => {
+    try {
+      await adminApi.verifyOrder(orderId, status)
+      fetchOrders(page)
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to verify order')
+    }
   }
 
   if (loading && orders.length === 0)
@@ -155,23 +167,41 @@ export default function OrdersPage() {
                       </td>
                       <td>
                         <span className="badge badge-pending">
-                          {order.paymentMethod === 'ONLINE'
-                            ? 'Online'
-                            : 'COD'}
+                          {order.paymentMethod === 'ONLINE' ? 'Online' : 'COD'}
                         </span>
-                        {order.paymentMethod === 'ONLINE' &&
-                          order.paymentScreenshot && (
-                            <div style={{ marginTop: '4px' }}>
-                              <a
-                                href={order.paymentScreenshot}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-link"
-                              >
-                                View
-                              </a>
-                            </div>
-                          )}
+                        {order.paymentMethod === 'ONLINE' && (order.paymentProof?.data || order.paymentScreenshot) && (
+                          <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <button
+                              type="button"
+                              className="btn-text"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setShowPaymentProof(true);
+                              }}
+                            >
+                              View Screenshot
+                            </button>
+
+                            {order.paymentStatus === 'unverified' && (
+                              <div style={{ display: 'flex', gap: '4px' }}>
+                                <button
+                                  type="button"
+                                  className="btn-sm btn-success"
+                                  onClick={() => handleVerify(order._id, 'verified')}
+                                >
+                                  ✅ Paid
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-sm btn-danger"
+                                  onClick={() => handleVerify(order._id, 'rejected')}
+                                >
+                                  ❌ Invalid
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td>
                         <span className={`badge badge-${order.status}`}>
@@ -231,12 +261,22 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Modal */}
-      {selectedOrder && (
+      {/* Modals */}
+      {selectedOrder && !showPaymentProof && (
         <OrderStatusModal
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onSuccess={handleStatusUpdate}
+        />
+      )}
+
+      {selectedOrder && showPaymentProof && (
+        <PaymentProofModal
+          imageUrl={selectedOrder.paymentProof?.data || selectedOrder.paymentScreenshot}
+          onClose={() => {
+            setSelectedOrder(null)
+            setShowPaymentProof(false)
+          }}
         />
       )}
     </div>
