@@ -26,17 +26,17 @@ export default function DashboardPage() {
   if (error) return <div className="error-state">{error}</div>
 
   const cards = [
-    { label: 'Total Orders', value: stats?.totalOrders ?? 0, icon: '🛒', route: '/admin/orders' },
-    { label: 'Total Products', value: stats?.totalProducts ?? 0, icon: '📦', route: '/admin/products' },
-    { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: '👥', route: '/admin/users' },
-    { label: 'Revenue (COD)', value: `₹${Number(stats?.totalRevenue || 0).toLocaleString()}`, icon: '💰', route: '/admin/orders' },
+    { label: 'Total Orders', value: stats?.totalOrders ?? 0, icon: '🛒', route: '/orders' },
+    { label: 'Total Products', value: stats?.totalProducts ?? 0, icon: '📦', route: '/products' },
+    { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: '👥', route: '/users' },
+    { label: 'Revenue (COD)', value: `₹${Number(stats?.totalRevenue || 0).toLocaleString()}`, icon: '💰', route: '/orders' },
   ]
 
   return (
     <div className="dashboard-stats">
       {cards.map((card) => (
-        <div 
-          key={card.label} 
+        <div
+          key={card.label}
           className="stat-card"
           onClick={() => router.push(card.route)}
           style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}

@@ -6,7 +6,7 @@ export default function OrderCard({ order, onUpdate }) {
   const [expanded, setExpanded] = useState(false)
 
   const formatDate = (d) => (d ? new Date(d).toLocaleDateString() : '-')
-  const formatAmount = (n) => `₹${Number(n || 0).toLocaleString()}`
+  const formatAmount = (n) => `Rs.${Number(n || 0).toLocaleString()}`
   const formatShipping = (addr, user) => {
     if (!addr && !user) return '-'
     const name = addr?.name || user?.name
@@ -62,7 +62,7 @@ export default function OrderCard({ order, onUpdate }) {
             <div key={idx} className="item-row">
               <div className="item-name">{item.product?.name || item.product}</div>
               <div className="item-qty">x{item.quantity}</div>
-              <div className="item-price">{formatAmount(item.price)}</div>
+              <div className="item-price">Rs.{Number(item.price || 0).toLocaleString()}</div>
             </div>
           ))}
         </div>

@@ -105,7 +105,7 @@ export default function OrderStatusModal({ order, onClose, onSuccess }) {
                       <div>Qty: {it.quantity}</div>
                       <div>{it.product?.name ? '' : ''}</div>
                       <div className="item-price">
-                        ₹{Number(it.price || 0).toLocaleString()}
+                        Rs.{Number(it.price || 0).toLocaleString()}
                       </div>
                     </div>
                   </div>
