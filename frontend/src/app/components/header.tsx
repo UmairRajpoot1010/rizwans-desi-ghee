@@ -104,6 +104,16 @@ export function Header() {
           ))}
 
           <button
+            onClick={() => navigate('favourites')}
+            className={`block w-full text-left py-2 text-sm font-medium transition-colors ${currentPage === 'favourites'
+              ? 'text-[#E6B65C]'
+              : 'text-[#6B4A1E] hover:text-[#E6B65C]'
+              }`}
+          >
+            Favourites
+          </button>
+
+          <button
             onClick={() => navigate('profile')}
             className={`flex w-full items-center justify-between py-2 text-sm font-medium transition-colors ${currentPage === 'profile'
               ? 'text-[#E6B65C]'

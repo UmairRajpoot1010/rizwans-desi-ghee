@@ -219,7 +219,7 @@
 /* Adjust for mobile bottom bar */
 @media (max-width: 768px) {
   .hero-dots {
-    bottom: 6rem;
+    bottom: 1rem;
   }
 }
 

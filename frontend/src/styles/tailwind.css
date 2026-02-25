@@ -2,21 +2,22 @@
 @source '../**/*.{js,ts,jsx,tsx}';
 
 @layer components {
+
   /* Scoped auth + cart theme so it does not leak globally */
   .auth-panel,
   .cart-panel {
-    --auth-primary-color: #F4B400;
-    --auth-primary-hover: #D99900;
-    --auth-primary-disabled: #FBE08A;
-    --auth-primary-outline: rgba(244, 180, 0, 0.55);
+    --auth-primary-color: #E6B65C;
+    --auth-primary-hover: #D9A74F;
+    --auth-primary-disabled: #F5E2B8;
+    --auth-primary-outline: rgba(230, 182, 92, 0.55);
   }
 
   .auth-panel .auth-primary-button,
   .cart-panel .cart-primary-button {
     background-color: var(--auth-primary-color);
-    color: #fff;
+    color: #6B4A1E;
     border-radius: 9999px;
-    box-shadow: 0 10px 30px rgba(244, 180, 0, 0.35);
+    box-shadow: 0 10px 30px rgba(230, 182, 92, 0.35);
     transition:
       background-color 180ms ease-out,
       box-shadow 180ms ease-out,
@@ -25,8 +26,9 @@
 
   .auth-panel .auth-primary-button:hover:not(:disabled),
   .cart-panel .cart-primary-button:hover:not(:disabled) {
-    background-color: var(--auth-primary-hover);
-    box-shadow: 0 14px 40px rgba(244, 180, 0, 0.5);
+    background-color: #5F6B3C;
+    color: #ffffff;
+    box-shadow: 0 14px 40px rgba(95, 107, 60, 0.4);
     transform: translateY(-1px);
   }
 
@@ -79,6 +81,7 @@
     0% {
       transform: translateX(0);
     }
+
     100% {
       /* Move by half the total track width (two identical sequences) */
       transform: translateX(-50%);
@@ -95,6 +98,7 @@
     0% {
       transform: translateX(0);
     }
+
     100% {
       transform: translateX(-50%);
     }
@@ -104,4 +108,3 @@
     animation: top-collection-marquee 32s linear infinite;
   }
 }
-

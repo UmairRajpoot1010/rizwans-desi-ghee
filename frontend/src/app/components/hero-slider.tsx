@@ -28,8 +28,8 @@ const slides: Slide[] = [
   {
     id: 2,
     image: getImageSrc(hero4 as { src?: string; default?: string }),
-    heading: "Rizwan's Pure Desi Ghee",
-    subheading: 'Taste Tradition. Feel the Purity.',
+    heading: "A taste of tradition in every drop",
+    subheading: 'Feel the purity',
   },
   {
     id: 3,
@@ -162,29 +162,28 @@ export function HeroSlider() {
               <div className="hero-slide__content-wrapper">
                 {isSecondSlide ? (
                   <div
-                    className="hero-slide__content w-full flex flex-col items-center justify-start px-6 md:px-10 pt-10 md:pt-16 text-center"
+                    className="hero-slide__content w-full flex flex-col items-center justify-start px-6 md:px-10 pt-[100px] md:pt-16 text-center"
                     style={{ transform: fgTransform }}
                   >
-                    <div className="flex flex-col items-center space-y-1 sm:space-y-2 max-w-2xl">
-                      <h1 className="hero-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight tracking-wide" style={{ color: '#ffffff', fontFamily: 'Playfair Display, serif' }}>
-                       A taste of tradition in every drop
+                    <div className="flex flex-col items-center space-y-4 max-w-2xl text-center">
+                      <h1 className="hero-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-white">
+                        {slide.heading}
                       </h1>
-                     
-                      <p className="hero-subheading text-sm sm:text-base md:text-lg" style={{ color: '#ffffff', fontFamily: 'Poppins, sans-serif' }}>
-                        Feel the purity
+                      <p className="hero-subheading text-sm sm:text-base md:text-lg text-white/85">
+                        {slide.subheading}
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div
-                    className="hero-slide__content w-full flex flex-col items-start justify-start px-6 md:px-10 pt-6 md:pt-10"
+                    className={`hero-slide__content w-full flex flex-col items-start justify-start px-6 md:px-10 ${isFirstSlide ? 'pt-[100px] md:pt-16' : 'pt-6 md:pt-10'
+                      }`}
                     style={{ transform: fgTransform }}
                   >
                     <div className="flex flex-col items-start space-y-4 max-w-md text-left">
                       <h1
-                        className={`hero-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-white ${
-                          isLastSlide ? 'max-w-xl' : ''
-                        }`}
+                        className={`hero-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-white ${isLastSlide ? 'max-w-xl' : ''
+                          }`}
                       >
                         {slide.heading}
                       </h1>
@@ -217,9 +216,8 @@ export function HeroSlider() {
               key={index}
               type="button"
               onClick={() => handleDotClick(index)}
-              className={`hero-dots__dot ${
-                isActive ? 'hero-dots__dot--active' : ''
-              }`}
+              className={`hero-dots__dot ${isActive ? 'hero-dots__dot--active' : ''
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           );

@@ -129,10 +129,10 @@ export function HomePage() {
       </div>
 
       {/* Featured Products Section */}
-      <section className="py-10 md:py-20 bg-[#FAF7F2]">
+      <section className="pt-10 md:pt-20 pb-4 bg-white">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-4xl lg:text-5xl text-[#6B4A1E] mb-2 md:mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+          <div className="text-center max-w-2xl mx-auto">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl text-[#6B4A1E] mb-1 md:mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
               Featured Products
             </h2>
             <p className="text-sm md:text-lg text-[#6B4A1E]/70" style={{ fontFamily: 'Poppins, sans-serif' }}>

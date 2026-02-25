@@ -177,9 +177,9 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
   const orderTotal = order.items?.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] py-8 md:py-16 relative overflow-hidden">
+    <div className="min-h-screen bg-[#FAF7F2] py-8 md:py-16 relative overflow-x-hidden w-full max-w-[100vw]">
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-[#E6B65C]/5 rounded-full blur-3xl mix-blend-multiply opacity-50 pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-full max-w-[40rem] h-[40rem] bg-[#E6B65C]/5 rounded-full blur-3xl mix-blend-multiply opacity-50 pointer-events-none"></div>
 
       <div className="container mx-auto px-4 lg:px-8 relative z-10 max-w-6xl">
         <div className="mb-6 md:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -431,7 +431,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-[#6B4A1E] text-[#FAF7F2] rounded-3xl p-6 md:p-8 shadow-2xl sticky top-24 relative overflow-hidden">
+            <div className="bg-[#6B4A1E] text-[#FAF7F2] rounded-3xl p-6 md:p-8 shadow-2xl lg:sticky lg:top-24 relative overflow-hidden">
               {/* Card texture/pattern overlay */}
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#FAF7F2_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
@@ -454,7 +454,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
                 <div className="border-t border-white/20 pt-6 mb-8">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs uppercase tracking-widest text-[#E6B65C] font-bold">Total Amount</span>
-                    <span className="text-3xl font-bold text-white tracking-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
+                    <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight break-all" style={{ fontFamily: 'Playfair Display, serif' }}>
                       Rs {(orderTotal + (order.deliveryCharges || 0)).toLocaleString('en-PK')}
                     </span>
                   </div>

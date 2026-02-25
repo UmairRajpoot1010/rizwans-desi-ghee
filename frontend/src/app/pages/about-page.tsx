@@ -15,7 +15,7 @@ export function AboutPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
       {/* Hero Banner – full-width background video */}
-      <section className="relative h-screen min-h-[100vh] w-full overflow-hidden">
+      <section className="relative w-full aspect-video md:aspect-auto md:min-h-[80vh] min-h-64 overflow-hidden">
         {/* Background video – full cover, no controls, autoplay, loop, muted, playsInline */}
         <video
           className="absolute inset-0 w-full h-full object-cover"
@@ -39,13 +39,13 @@ export function AboutPage() {
         {/* Centered content above video */}
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4">
           <h1
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white text-center mb-4"
+            className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold text-white text-center mb-2 md:mb-4"
             style={{ fontFamily: 'Playfair Display, serif' }}
           >
             Our Story
           </h1>
           <p
-            className="text-lg sm:text-xl md:text-2xl text-white/95 text-center max-w-2xl mx-auto"
+            className="text-base sm:text-lg md:text-2xl text-white/95 text-center max-w-2xl mx-auto"
             style={{ fontFamily: 'Poppins, sans-serif' }}
           >
             A Legacy of Purity, Tradition & Trust
@@ -66,26 +66,26 @@ export function AboutPage() {
 
             <div className="space-y-6 text-lg text-[#6B4A1E]/80 leading-relaxed" style={{ fontFamily: 'Poppins, sans-serif' }}>
               <p>
-                Our journey began over 25 years ago in the heart of rural Punjab, Pakistan, where our founder, Rizwan Ahmed, 
-                witnessed his grandmother preparing ghee using the traditional bilona method. The aroma, the golden 
+                Our journey began over 25 years ago in the heart of rural Punjab, Pakistan, where our founder, Rizwan Ahmed,
+                witnessed his grandmother preparing ghee using the traditional bilona method. The aroma, the golden
                 color, and most importantly, the pure taste left an indelible mark on his heart.
               </p>
 
               <p>
-                In 2001, driven by a passion to preserve this dying art and provide families with genuine, 
-                unadulterated desi ghee, Rizwan started our small dairy farm with just five cows. The principle 
+                In 2001, driven by a passion to preserve this dying art and provide families with genuine,
+                unadulterated desi ghee, Rizwan started our small dairy farm with just five cows. The principle
                 was simple but profound: treat the cows with love, feed them naturally, and never compromise on quality.
               </p>
 
               <p>
-                Today, Rizwan's Desi Ghee is trusted by over 10,000 families across 50+ cities. Despite our growth, 
-                we haven't changed our methods. Every jar of ghee is still made the traditional way – hand-churned 
+                Today, Rizwan's Desi Ghee is trusted by over 10,000 families across 50+ cities. Despite our growth,
+                we haven't changed our methods. Every jar of ghee is still made the traditional way – hand-churned
                 using the bilona process, just like our grandmother taught us.
               </p>
 
               <p>
-                Our commitment goes beyond just making ghee. We're preserving a heritage, supporting traditional 
-                farming practices, and ensuring that future generations can experience the authentic taste and 
+                Our commitment goes beyond just making ghee. We're preserving a heritage, supporting traditional
+                farming practices, and ensuring that future generations can experience the authentic taste and
                 health benefits of pure desi ghee.
               </p>
             </div>
@@ -208,7 +208,7 @@ export function AboutPage() {
             ].map((item, index) => {
               const Icon = item.icon;
               return (
-                <div 
+                <div
                   key={index}
                   className="bg-gradient-to-br from-[#FAF7F2] to-white p-8 rounded-3xl border border-[#E6B65C]/20 hover:shadow-xl transition-all"
                 >
@@ -242,14 +242,14 @@ export function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-8">
             <div className="rounded-3xl overflow-hidden shadow-2xl h-[320px]">
-              <img 
+              <img
                 src={getImageSrc(milk as { src?: string; default?: string })}
                 alt="Milk"
                 className="w-full h-full object-cover object-center rounded-xl"
               />
             </div>
             <div className="rounded-3xl overflow-hidden shadow-2xl h-[320px]">
-              <img 
+              <img
                 src={getImageSrc(cow as { src?: string; default?: string })}
                 alt="Cow"
                 className="w-full h-full object-cover object-center rounded-xl"
@@ -283,7 +283,7 @@ export function AboutPage() {
                 Visit Our Farm
               </h3>
               <p className="text-white/90 text-base sm:text-lg mb-6 max-w-2xl mx-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                We welcome you to visit our farm and see firsthand how we make our pure desi ghee. 
+                We welcome you to visit our farm and see firsthand how we make our pure desi ghee.
                 Experience the traditional process and meet our happy cows!
               </p>
               <button className="px-8 py-4 bg-[#E6B65C] text-[#6B4A1E] rounded-full hover:bg-white transition-all" style={{ fontFamily: 'Poppins, sans-serif' }}>
