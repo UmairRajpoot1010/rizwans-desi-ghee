@@ -30,12 +30,22 @@ exports.adminLogin = async (req, res, next) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim()
+    console.log(`🔐 Admin login attempt: ${normalizedEmail}`)
 
     // Find admin by normalized email
     const admin = await Admin.findByEmail(normalizedEmail)
 
+    if (!admin) {
+      console.warn(`❌ Admin not found: ${normalizedEmail}`)
+      return sendResponse(res, 401, {
+        success: false,
+        message: 'Invalid credentials',
+      })
+    }
+
     const allowedRoles = ['admin', 'superadmin']
-    if (!admin || !allowedRoles.includes(admin.role)) {
+    if (!allowedRoles.includes(admin.role)) {
+      console.warn(`🚫 Invalid role for ${normalizedEmail}: ${admin.role}`)
       return sendResponse(res, 401, {
         success: false,
         message: 'Invalid credentials',
@@ -43,6 +53,7 @@ exports.adminLogin = async (req, res, next) => {
     }
 
     if (!admin.isActive) {
+      console.warn(`🛑 Inactive admin account: ${normalizedEmail}`)
       return sendResponse(res, 403, {
         success: false,
         message: 'Admin account is inactive. Please contact administrator',
@@ -50,6 +61,8 @@ exports.adminLogin = async (req, res, next) => {
     }
 
     const isMatch = await admin.comparePassword(password)
+    console.log(`🔑 Password match for ${normalizedEmail}: ${isMatch}`)
+
     if (!isMatch) {
       return sendResponse(res, 401, {
         success: false,

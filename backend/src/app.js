@@ -10,6 +10,7 @@ const productRoutes = require('./routes/product.routes')
 const orderRoutes = require('./routes/order.routes')
 const authRoutes = require('./routes/auth.routes')
 const adminRoutes = require('./routes/admin.routes')
+const reviewRoutes = require('./routes/review.routes')
 
 const app = express()
 
@@ -60,8 +61,20 @@ if (NODE_ENV === 'development') {
 }
 
 // Body Parser Middleware
-app.use(express.json({ limit: '20mb' })) // Increased limit for Base64 screenshots
-app.use(express.urlencoded({ extended: true, limit: '20mb' }))
+app.use(express.json({ limit: '50mb' })) // Increased limit for Base64 screenshots
+app.use(express.urlencoded({ extended: true, limit: '50mb' }))
+
+// Production Request Logger for debugging empty bodies
+app.use((req, res, next) => {
+  if (req.method === 'POST') {
+    const hasBody = req.body && Object.keys(req.body).length > 0;
+    if (!hasBody && req.headers['content-length'] > 0) {
+      console.warn(`📥 [${new Date().toISOString()}] Warning: POST ${req.path} has content-length ${req.headers['content-length']} but empty body!`);
+      console.warn('   Headers:', JSON.stringify(req.headers));
+    }
+  }
+  next();
+});
 
 // Serve uploaded files (payment screenshots, etc.)
 const path = require('path')
@@ -95,6 +108,7 @@ app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/reviews', reviewRoutes)
 
 // 404 Handler - must be after all routes
 app.use((req, res, next) => {

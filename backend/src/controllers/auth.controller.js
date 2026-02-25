@@ -60,12 +60,7 @@ exports.register = async (req, res, next) => {
       message: 'User registered successfully',
       data: {
         token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
+        user,
       },
     })
   } catch (error) {
@@ -119,12 +114,7 @@ exports.login = async (req, res, next) => {
       message: 'Login successful',
       data: {
         token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
+        user,
       },
     })
   } catch (error) {
@@ -237,12 +227,7 @@ exports.googleAuth = async (req, res, next) => {
       message: 'Login successful',
       data: {
         token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
+        user,
       },
     })
   } catch (error) {
@@ -274,7 +259,7 @@ exports.googleCallback = async (req, res, next) => {
     return sendResponse(res, 200, {
       success: true,
       message: 'Login successful',
-      data: { token, user: { id: user._id, name: user.name, email: user.email, role: user.role } },
+      data: { token, user },
     })
   } catch (error) {
     next(error)

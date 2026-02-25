@@ -157,6 +157,16 @@ const validateProductUpdate = [
 // Order validation rules
 const validateOrder = [
   body('items')
+    .customSanitizer((value) => {
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value)
+        } catch (e) {
+          return value
+        }
+      }
+      return value
+    })
     .isArray({ min: 1 })
     .withMessage('Order must have at least one item')
     .custom((items) => {
@@ -181,12 +191,25 @@ const validateOrder = [
       return true
     }),
   // Resilient validation for shipping address fields
-  body('shippingAddress').notEmpty().withMessage('Shipping address information is required'),
+  body('shippingAddress')
+    .customSanitizer((value) => {
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value)
+        } catch (e) {
+          return value
+        }
+      }
+      return value
+    })
+    .notEmpty()
+    .withMessage('Shipping address information is required'),
   body('shippingAddress.name')
     .trim()
     .notEmpty()
     .withMessage('Shipping name is required')
-    .isLength({ min: 2, max: 100 }),
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Shipping name must be between 2 and 100 characters'),
   body('shippingAddress.email')
     .trim()
     .notEmpty()
@@ -197,12 +220,14 @@ const validateOrder = [
     .trim()
     .notEmpty()
     .withMessage('Shipping phone is required')
-    .isLength({ min: 10, max: 15 }),
+    .isLength({ min: 10, max: 15 })
+    .withMessage('Shipping phone must be between 10 and 15 digits'),
   body('shippingAddress.address')
     .trim()
     .notEmpty()
     .withMessage('Shipping address is required')
-    .isLength({ min: 5, max: 200 }),
+    .isLength({ min: 5, max: 200 })
+    .withMessage('Shipping address must be between 5 and 200 characters'),
   body('shippingAddress.city')
     .trim()
     .notEmpty()
@@ -219,7 +244,9 @@ const validateOrder = [
   // Payment info validation
   body('paymentMethod')
     .optional()
-    .isIn(['COD', 'ONLINE', 'cod', 'online'])
+    .trim()
+    .toUpperCase()
+    .isIn(['COD', 'ONLINE'])
     .withMessage('Invalid payment method'),
   body('paymentProof')
     .optional()
