@@ -29,7 +29,7 @@ export default function DashboardPage() {
     { label: 'Total Orders', value: stats?.totalOrders ?? 0, icon: '🛒', route: '/orders' },
     { label: 'Total Products', value: stats?.totalProducts ?? 0, icon: '📦', route: '/products' },
     { label: 'Total Users', value: stats?.totalUsers ?? 0, icon: '👥', route: '/users' },
-    { label: 'Revenue (COD)', value: `₹${Number(stats?.totalRevenue || 0).toLocaleString()}`, icon: '💰', route: '/orders' },
+    { label: 'Revenue (COD)', value: `Rs. ${Number(stats?.totalRevenue || 0).toLocaleString()}`, icon: '💰', route: '/orders' },
   ]
 
   return (

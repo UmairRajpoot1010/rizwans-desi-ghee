@@ -163,7 +163,7 @@ export default function OrdersPage() {
                       </td>
                       <td>{order.items?.length || 0}</td>
                       <td>
-                        Rs.{Number(order.totalAmount || 0).toLocaleString()}
+                        Rs. {Number(order.totalAmount || 0).toLocaleString()}
                       </td>
                       <td>
                         <span className="badge badge-pending">

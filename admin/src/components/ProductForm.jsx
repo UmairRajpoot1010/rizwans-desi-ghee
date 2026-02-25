@@ -152,11 +152,11 @@ export default function ProductForm({ product, onClose, onSuccess }) {
               placeholder="Product description"
             />
           </div>
-          
+
           {/* VARIANT SELECTION */}
           <div className="form-row">
             <div className="form-group">
-              <label>Price (₹) *</label>
+              <label>Price (Rs.) *</label>
               <input
                 type="number"
                 name="price"
@@ -209,13 +209,13 @@ export default function ProductForm({ product, onClose, onSuccess }) {
                 </button>
                 <small>Upload product images from your device (PNG, JPG, GIF, WebP)</small>
               </div>
-              
+
               {previewImages.length > 0 && (
                 <div className="image-preview-grid">
                   {previewImages.map((src, idx) => (
                     <div key={idx} className="image-preview-item">
-                      <img 
-                        src={src} 
+                      <img
+                        src={src}
                         alt={`Preview ${idx + 1}`}
                         style={{ maxWidth: '100%', maxHeight: '150px', objectFit: 'cover' }}
                       />

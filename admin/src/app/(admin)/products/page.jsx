@@ -101,7 +101,7 @@ export default function ProductsPage() {
                     </div>
                   </td>
                   <td>{p.category}</td>
-                  <td>₹{Number(p.price).toLocaleString()}</td>
+                  <td>Rs. {Number(p.price).toLocaleString()}</td>
                   <td>{p.stock ?? 0}</td>
                   <td>
                     <span className={`badge ${p.isActive ? 'badge-success' : 'badge-muted'}`}>
