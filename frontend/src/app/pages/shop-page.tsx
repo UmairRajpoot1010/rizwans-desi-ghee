@@ -40,9 +40,9 @@ export function ShopPage() {
   };
 
   const handleAddToCart = (product: Product) => {
-    // Default to 1kg if available, otherwise first variant
+    // Use the product's own weight if available, otherwise find 1kg or first variant
     // @ts-ignore
-    const defaultSize = product.variants?.find((v: any) => v.size === '1kg')?.size || product.variants?.[0]?.size || '1kg';
+    const defaultSize = product.weight || product.variants?.find((v: any) => v.size === '1kg')?.size || product.variants?.[0]?.size || '1kg';
     addToCart(product, 1, defaultSize);
   };
 
