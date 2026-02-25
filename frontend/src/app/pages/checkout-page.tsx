@@ -5,7 +5,7 @@ import { ordersApi, getErrorMessage } from '@/lib/api';
 import { AxiosError } from 'axios';
 
 export function CheckoutPage() {
-  const { cart, setCurrentPage, isAuthenticated, user, clearCart, setSelectedOrderId } = useApp();
+  const { cart, setCurrentPage, isAuthenticated, user, clearCart, setSelectedOrderId, setHasNewOrder } = useApp();
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -108,17 +108,24 @@ export function CheckoutPage() {
       );
       const payload = res.data;
       if (payload?.success) {
+
         clearCart();
-        setPaymentScreenshot(null)
+        setPaymentScreenshot(null);
+        setHasNewOrder(true);
+
         // Capture order ID and show placement stages
         setLastOrderId(payload.data?._id || null);
         setOrderPlacementStage('placing');
         setShowSuccess(true);
 
-        // Transition from "placing" to "placed" after 2 seconds
+        // Transition from "placing" to "placed" after 1.5 seconds
         window.setTimeout(() => {
           setOrderPlacementStage('placed');
-        }, 2000);
+          // Auto-vanish after 8 seconds if not clicked
+          window.setTimeout(() => {
+            setShowSuccess(false);
+          }, 8000);
+        }, 1500);
 
         return;
       }
@@ -560,90 +567,65 @@ export function CheckoutPage() {
       </section>
       {/* Order success modal - Multi-stage popup */}
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => {
-            if (orderPlacementStage === 'placed') {
-              setShowSuccess(false);
-              setCurrentPage('home');
-              window.scrollTo(0, 0);
-            }
-          }} />
-          <div className="relative z-10 w-full max-w-md bg-white rounded-2xl p-8 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setShowSuccess(false)}
+          />
+          <div className="relative z-10 w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl transform transition-all duration-300 scale-100 animate-in fade-in zoom-in">
             {orderPlacementStage === 'placing' ? (
-              <>
-                <div className="flex justify-center mb-4">
-                  <div className="inline-flex items-center justify-center">
-                    <svg className="spinner h-12 w-12 text-[#5F6B3C]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 border-4 border-[#5F6B3C]/20 border-t-[#5F6B3C] rounded-full animate-spin"></div>
+                </div>
+                <h3 className="text-xl font-bold text-[#6B4A1E]" style={{ fontFamily: 'Playfair Display, serif' }}>Placing Order...</h3>
+                <p className="text-sm text-[#6B4A1E]/70" style={{ fontFamily: 'Poppins, sans-serif' }}>Please wait while we secure your ghee.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+                    <svg className="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-[#6B4A1E]">Placing Your Order...</h3>
-                <p className="mt-2 text-sm text-[#6B4A1E]/70">Please wait while we process your order</p>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-center mb-4">
-                  <svg className="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+
+                <div>
+                  <h3 className="text-2xl font-bold text-[#6B4A1E] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>Order Placed!</h3>
+                  <p className="text-sm text-[#6B4A1E]/70" style={{ fontFamily: 'Poppins, sans-serif' }}>Thank you for choosing purity. Your order is confirmed.</p>
                 </div>
-                <h3 className="text-lg font-semibold text-[#6B4A1E]">Order Placed Successfully!</h3>
-                <p className="mt-2 text-sm text-[#6B4A1E]/70">Your order has been received. We'll process it shortly.</p>
 
                 {lastOrderId && (
-                  <div className="mt-4 p-3 bg-[#FAF7F2] rounded-xl border border-[#E6B65C]/20">
-                    <p className="text-xs uppercase tracking-widest font-bold text-[#6B4A1E]/50 mb-1">Order ID</p>
-                    <p className="text-sm font-mono font-bold text-[#5F6B3C]">#{lastOrderId.slice(-8).toUpperCase()}</p>
+                  <div className="bg-[#FAF7F2] py-2 px-4 rounded-full border border-[#E6B65C]/20 inline-block">
+                    <p className="text-xs font-mono font-bold text-[#5F6B3C]">#{lastOrderId.slice(-8).toUpperCase()}</p>
                   </div>
                 )}
 
-                <div className="mt-6 flex flex-col gap-3">
+                <div className="pt-2">
                   <button
                     onClick={() => {
                       setShowSuccess(false);
                       if (lastOrderId) {
                         setSelectedOrderId(lastOrderId);
-                        setCurrentPage('order-detail'); // Direct navigation to the new order
+                        setCurrentPage('order-detail');
                       } else {
                         setCurrentPage('profile');
                       }
                       window.scrollTo(0, 0);
                     }}
-                    className="w-full py-4 bg-[#5F6B3C] text-white rounded-full hover:bg-[#6B4A1E] transition-all font-bold shadow-lg flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-[#5F6B3C] text-white rounded-full hover:bg-[#6B4A1E] transition-all font-bold shadow-lg flex items-center justify-center gap-2 group"
                     style={{ fontFamily: 'Poppins, sans-serif' }}
                   >
-                    <Package className="w-5 h-5" />
-                    View Order Details
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowSuccess(false);
-                      setCurrentPage('shop');
-                      window.scrollTo(0, 0);
-                    }}
-                    className="w-full py-2 border-2 border-[#5F6B3C]/30 text-[#5F6B3C] rounded-full hover:bg-[#5F6B3C]/5 transition-all font-semibold"
-                    style={{ fontFamily: 'Poppins, sans-serif' }}
-                  >
-                    Continue Shopping
+                    <Package className="w-5 h-5 transition-transform group-hover:scale-110" />
+                    See Order Details
                   </button>
                 </div>
 
-                <p className="mt-4 text-xs text-[#6B4A1E]/60" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                  For immediate support, contact us on WhatsApp
-                </p>
-              </>
+                <p className="text-[10px] text-[#6B4A1E]/40" style={{ fontFamily: 'Poppins, sans-serif' }}>Closing automatically in a moment...</p>
+              </div>
             )}
           </div>
-          <style jsx>{`
-            @keyframes spin {
-              to {
-                transform: rotate(360deg);
-              }
-            }
-            .spinner {
-              animation: spin 1s linear infinite;
-            }
-          `}</style>
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ import { ordersApi, authApi } from '@/lib/api'
 import { ChevronRight, Edit2, LogOut, Check, X, User as UserIcon, MapPin, Phone, Mail, Package } from 'lucide-react'
 
 export function ProfilePage() {
-  const { user, isAuthenticated, setCurrentPage, logout, setSelectedOrderId, updateUser } = useApp() as any
+  const { user, isAuthenticated, setCurrentPage, logout, setSelectedOrderId, updateUser, setHasNewOrder } = useApp() as any
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -21,7 +21,8 @@ export function ProfilePage() {
 
   useEffect(() => {
     setCurrentPage('profile')
-  }, [setCurrentPage])
+    setHasNewOrder(false)
+  }, [setCurrentPage, setHasNewOrder])
 
   useEffect(() => {
     if (user) {

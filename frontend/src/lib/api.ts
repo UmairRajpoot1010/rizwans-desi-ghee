@@ -116,6 +116,27 @@ export const ordersApi = {
     api.put<ApiResponse<Order>>(`/orders/${id}/cancel`),
 };
 
+export type Review = {
+  _id: string;
+  name: string;
+  rating: number;
+  comment: string;
+  date: string;
+  category: string;
+};
+
+export type ReviewStats = {
+  averageRating: number;
+  totalReviews: number;
+};
+
+export const reviewsApi = {
+  getAll: (category: string = 'Desi Ghee') =>
+    api.get<ApiResponse<{ reviews: Review[]; stats: ReviewStats }>>('/reviews', { params: { category } }),
+  create: (review: { name: string; rating: number; comment: string; date?: string; category?: string }) =>
+    api.post<ApiResponse<Review>>('/reviews', review),
+};
+
 export type ApiProduct = {
   _id: string;
   name: string;

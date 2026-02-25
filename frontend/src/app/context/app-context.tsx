@@ -27,6 +27,13 @@ export type AuthUser = {
   name: string;
   email: string;
   role?: string;
+  phone?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
 };
 
 type AuthResult =
@@ -63,6 +70,8 @@ type AppContextType = {
   setIsAuthOpen: (open: boolean) => void;
   authMode: 'login' | 'signup';
   setAuthMode: (mode: 'login' | 'signup') => void;
+  hasNewOrder: boolean;
+  setHasNewOrder: (value: boolean) => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -87,6 +96,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [favourites, setFavourites] = useState<Product[]>([]);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [hasNewOrder, setHasNewOrder] = useState(false);
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -122,11 +132,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (payload?.success && payload?.data) {
           const u = payload.data;
           const id = (u as { _id?: string; id?: string })?._id ?? (u as { id?: string })?.id;
-          const name = (u as { name?: string })?.name ?? '';
-          const email = (u as { email?: string })?.email ?? '';
-          const role = (u as { role?: string })?.role;
-          setUser({ id, name, email, role });
-          localStorage.setItem(USER_KEY, JSON.stringify({ id, name, email, role }));
+          const authUser: AuthUser = { ...u, id };
+          setUser(authUser);
+          localStorage.setItem(USER_KEY, JSON.stringify(authUser));
         } else {
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem(USER_KEY);
@@ -156,11 +164,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!token || !u) {
             return { ok: false, message: 'Invalid response from server' };
           }
-          const id = (u as { id?: string })?.id ?? '';
-          const name = (u as { name?: string })?.name ?? '';
-          const em = (u as { email?: string })?.email ?? '';
-          const role = (u as { role?: string })?.role;
-          const authUser: AuthUser = { id, name, email: em, role };
+          const id = (u as { id?: string; _id?: string })?.id || (u as { id?: string; _id?: string })?._id || '';
+          const authUser: AuthUser = { ...u, id };
           localStorage.setItem(TOKEN_KEY, token);
           localStorage.setItem(USER_KEY, JSON.stringify(authUser));
           setUser(authUser);
@@ -186,11 +191,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!token || !u) {
             return { ok: false, message: 'Invalid response from server' };
           }
-          const id = (u as { id?: string })?.id ?? '';
-          const n = (u as { name?: string })?.name ?? name;
-          const em = (u as { email?: string })?.email ?? email;
-          const role = (u as { role?: string })?.role;
-          const authUser: AuthUser = { id, name: n, email: em, role };
+          const id = (u as { id?: string; _id?: string })?.id || (u as { id?: string; _id?: string })?._id || '';
+          const authUser: AuthUser = { ...u, id };
           localStorage.setItem(TOKEN_KEY, token);
           localStorage.setItem(USER_KEY, JSON.stringify(authUser));
           setUser(authUser);
@@ -302,6 +304,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsAuthOpen,
         authMode,
         setAuthMode,
+        hasNewOrder,
+        setHasNewOrder,
       }}
     >
       {children}

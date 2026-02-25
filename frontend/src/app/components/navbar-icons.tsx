@@ -36,7 +36,7 @@ function Badge({ count }: { count: number }) {
 }
 
 export function NavbarIcons({ onNavigate }: Props) {
-  const { cart, favourites, isAuthenticated, user, logout, isAuthOpen, setIsAuthOpen, setAuthMode } = useApp();
+  const { cart, favourites, isAuthenticated, user, logout, isAuthOpen, setIsAuthOpen, setAuthMode, hasNewOrder, setHasNewOrder } = useApp();
 
   const cartItemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
@@ -107,8 +107,13 @@ export function NavbarIcons({ onNavigate }: Props) {
           className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-800 transition-transform duration-200 hover:scale-105 hover:text-[#F4B400]"
         >
           {isAuthenticated ? (
-            <div className="h-5 w-5 rounded-full bg-[#5F6B3C] flex items-center justify-center text-white text-xs font-semibold">
-              {user?.name?.[0]?.toUpperCase() || 'U'}
+            <div className="relative">
+              <div className="h-5 w-5 rounded-full bg-[#5F6B3C] flex items-center justify-center text-white text-xs font-semibold">
+                {user?.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+              {hasNewOrder && (
+                <span className="absolute -bottom-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white"></span>
+              )}
             </div>
           ) : (
             <User className="h-5 w-5" />
@@ -129,11 +134,15 @@ export function NavbarIcons({ onNavigate }: Props) {
               type="button"
               onClick={() => {
                 setUserMenuOpen(false);
+                setHasNewOrder(false);
                 onNavigate('profile');
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-50"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-50 flex items-center justify-between"
             >
               Profile
+              {hasNewOrder && (
+                <span className="h-2 w-2 rounded-full bg-red-500"></span>
+              )}
             </button>
             <button
               type="button"

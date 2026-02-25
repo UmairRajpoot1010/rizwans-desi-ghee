@@ -7,7 +7,7 @@ import { NavbarIcons } from '@/app/components/navbar-icons';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { currentPage, setCurrentPage, cart } = useApp();
+  const { currentPage, setCurrentPage, cart, hasNewOrder } = useApp();
 
   const cartItemCount = cart.reduce(
     (total, item) => total + item.quantity,
@@ -59,8 +59,8 @@ export function Header() {
               key={item.page}
               onClick={() => navigate(item.page)}
               className={`relative pb-1 text-sm md:text-base font-medium transition-colors duration-200 border-b-2 ${currentPage === item.page
-                  ? 'text-[#E6B65C] border-[#E6B65C]'
-                  : 'text-[#6B4A1E] border-transparent hover:text-[#E6B65C] hover:border-[#E6B65C]'
+                ? 'text-[#E6B65C] border-[#E6B65C]'
+                : 'text-[#6B4A1E] border-transparent hover:text-[#E6B65C] hover:border-[#E6B65C]'
                 }`}
             >
               {item.label}
@@ -75,11 +75,14 @@ export function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-[#6B4A1E]"
+            className="md:hidden text-[#6B4A1E] relative"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             type="button"
           >
             {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+            {!mobileMenuOpen && hasNewOrder && (
+              <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
+            )}
           </button>
         </div>
       </div>
@@ -92,13 +95,26 @@ export function Header() {
               key={item.page}
               onClick={() => navigate(item.page)}
               className={`block w-full text-left py-2 text-sm font-medium transition-colors ${currentPage === item.page
-                  ? 'text-[#E6B65C]'
-                  : 'text-[#6B4A1E] hover:text-[#E6B65C]'
+                ? 'text-[#E6B65C]'
+                : 'text-[#6B4A1E] hover:text-[#E6B65C]'
                 }`}
             >
               {item.label}
             </button>
           ))}
+
+          <button
+            onClick={() => navigate('profile')}
+            className={`flex w-full items-center justify-between py-2 text-sm font-medium transition-colors ${currentPage === 'profile'
+              ? 'text-[#E6B65C]'
+              : 'text-[#6B4A1E] hover:text-[#E6B65C]'
+              }`}
+          >
+            <span>Profile</span>
+            {hasNewOrder && (
+              <span className="h-2 w-2 rounded-full bg-red-500"></span>
+            )}
+          </button>
 
           {/* Mobile Cart */}
           <button
