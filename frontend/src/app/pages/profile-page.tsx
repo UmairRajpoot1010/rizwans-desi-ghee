@@ -4,7 +4,17 @@ import { ordersApi, authApi } from '@/lib/api'
 import { ChevronRight, Edit2, LogOut, Check, X, User as UserIcon, MapPin, Phone, Mail, Package } from 'lucide-react'
 
 export function ProfilePage() {
-  const { user, isAuthenticated, setCurrentPage, logout, setSelectedOrderId, updateUser, setHasNewOrder } = useApp() as any
+  const {
+    user,
+    isAuthenticated,
+    setCurrentPage,
+    logout,
+    setSelectedOrderId,
+    updateUser,
+    setHasNewOrder,
+    setIsAuthOpen,
+    setAuthMode,
+  } = useApp() as any
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -96,7 +106,10 @@ export function ProfilePage() {
           <h2 className="text-3xl text-[#6B4A1E] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>Authentication Required</h2>
           <p className="text-[#6B4A1E]/70 mb-6">Please log in to view and manage your profile.</p>
           <button
-            onClick={() => setCurrentPage('home')}
+            onClick={() => {
+              setAuthMode('login')
+              setIsAuthOpen(true)
+            }}
             className="w-full bg-[#5F6B3C] text-white py-3 rounded-xl hover:bg-[#4A542E] transition-all shadow-md font-medium"
           >
             Go to Login

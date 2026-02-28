@@ -29,8 +29,9 @@ export default function GoogleCallbackPage() {
         const payload = res.data
         if (payload?.success && payload?.data) {
           const { token: jwt, user } = payload.data
+          const id = (user as { _id?: string; id?: string })?._id ?? (user as { id?: string })?.id
           localStorage.setItem('rdg_token', jwt)
-          localStorage.setItem('rdg_user', JSON.stringify({ id: user.id, name: user.name, email: user.email }))
+          localStorage.setItem('rdg_user', JSON.stringify({ id, name: user.name, email: user.email }))
           setCurrentPage('home')
           window.location.href = '/'
         } else {

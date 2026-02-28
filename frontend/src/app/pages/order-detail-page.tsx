@@ -177,7 +177,7 @@ export function OrderDetailPage({ orderId }: { orderId: string }) {
   const orderTotal = order.items?.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] py-8 md:py-16 relative overflow-x-hidden w-full max-w-[100vw]">
+    <div className="min-h-screen bg-[#FAF7F2] py-8 md:py-16 relative w-full">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-full max-w-[40rem] h-[40rem] bg-[#E6B65C]/5 rounded-full blur-3xl mix-blend-multiply opacity-50 pointer-events-none"></div>
 

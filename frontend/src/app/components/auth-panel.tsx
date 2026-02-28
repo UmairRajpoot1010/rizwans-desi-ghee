@@ -174,17 +174,17 @@ export function AuthPanel({ open, mode, onClose, onModeChange }: Props) {
   const onGoogleSignIn = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
     if (!clientId) {
-      setFormError('Google sign-in is not configured')
+      setFormError('Google sign-in is not configured. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your environment.')
       return
     }
-    const redirectUri = `${window.location.origin}/google-callback`
+    const redirectUri = `${typeof window !== 'undefined' ? window.location.origin : ''}/google-callback`
     const nonce = Math.random().toString(36).slice(2)
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
       clientId
     )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=${encodeURIComponent(
       'openid email profile'
     )}&nonce=${nonce}&prompt=select_account`
-    window.open(url, '_self')
+    window.location.href = url
   }
 
   return (

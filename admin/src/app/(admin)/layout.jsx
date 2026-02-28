@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
+import { useNewOrdersCount } from '@/hooks/useNewOrdersCount'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/products', label: 'Products', icon: '📦' },
-  { href: '/orders', label: 'Orders', icon: '🛒' },
+  { href: '/orders', label: 'Orders', icon: '🛒', badgeKey: 'orders' },
   { href: '/users', label: 'Users', icon: '👥' },
 ]
 
@@ -17,6 +18,7 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname()
   const { admin, loading, logout, isAuthenticated } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { pendingCount, showNewOrderToast, dismissToast } = useNewOrdersCount()
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -74,6 +76,11 @@ export default function AdminLayout({ children }) {
             >
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-label">{item.label}</span>
+              {item.badgeKey === 'orders' && pendingCount > 0 && (
+                <span className="nav-badge" aria-label={`${pendingCount} new order${pendingCount !== 1 ? 's' : ''}`}>
+                  {pendingCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
@@ -104,6 +111,24 @@ export default function AdminLayout({ children }) {
         </header>
         <div className="admin-content">{children}</div>
       </main>
+
+      {/* New order notification toast */}
+      {showNewOrderToast && (
+        <div className="new-order-toast" role="alert">
+          <span className="new-order-toast-icon">✓</span>
+          <span className="new-order-toast-text">
+            New order placed! {pendingCount} pending order{pendingCount !== 1 ? 's' : ''} need attention.
+          </span>
+          <button
+            type="button"
+            className="new-order-toast-close"
+            onClick={dismissToast}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   )
 }
