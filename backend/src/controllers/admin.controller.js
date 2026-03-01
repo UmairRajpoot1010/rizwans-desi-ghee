@@ -339,7 +339,7 @@ exports.updateOrderStatus = async (req, res, next) => {
     }
 
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
-    const validPaymentStatuses = ['pending', 'paid', 'failed']
+    const validPaymentStatuses = ['pending', 'paid', 'unverified', 'failed']
     const validPaymentVerification = ['pending', 'verified', 'rejected']
 
     if (status && !validStatuses.includes(status)) {
@@ -390,6 +390,11 @@ exports.updateOrderStatus = async (req, res, next) => {
 
     if (paymentVerificationStatus) {
       order.paymentVerificationStatus = paymentVerificationStatus
+      // Sync payment status for ONLINE orders: verified -> paid, rejected -> failed
+      if (order.paymentMethod === 'ONLINE') {
+        if (paymentVerificationStatus === 'verified') order.paymentStatus = 'paid'
+        else if (paymentVerificationStatus === 'rejected') order.paymentStatus = 'failed'
+      }
     }
 
     // If order is newly cancelled, restore product stock

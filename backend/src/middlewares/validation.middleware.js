@@ -263,8 +263,8 @@ const validateOrderStatus = [
     .withMessage('Invalid status. Must be one of: pending, processing, shipped, delivered, cancelled'),
   body('paymentStatus')
     .optional({ checkFalsy: false })
-    .isIn(['pending', 'paid', 'failed'])
-    .withMessage('Invalid payment status. Must be one of: pending, paid, failed'),
+    .isIn(['pending', 'paid', 'unverified', 'failed'])
+    .withMessage('Invalid payment status. Must be one of: pending, paid, unverified, failed'),
   body('paymentVerificationStatus')
     .optional({ checkFalsy: false })
     .isIn(['pending', 'verified', 'rejected'])
