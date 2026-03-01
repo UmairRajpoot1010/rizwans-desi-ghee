@@ -28,10 +28,11 @@ export function CheckoutPage() {
   const total: number = subtotal + deliveryCharges;
 
   useEffect(() => {
-    if (cart.length === 0) {
+    // Don't redirect to cart when we're showing order success (cart was just cleared after place order)
+    if (cart.length === 0 && !showSuccess) {
       setCurrentPage('cart');
     }
-  }, [cart.length, setCurrentPage]);
+  }, [cart.length, showSuccess, setCurrentPage]);
 
   useEffect(() => {
     if (user) {
@@ -138,7 +139,8 @@ export function CheckoutPage() {
     }
   };
 
-  if (cart.length === 0) {
+  // Keep rendering when showing order success (cart is cleared after place order)
+  if (cart.length === 0 && !showSuccess) {
     return null;
   }
 
@@ -257,7 +259,7 @@ export function CheckoutPage() {
                         className="block text-xs md:text-base text-[#6B4A1E] mb-2"
                         style={{ fontFamily: 'Poppins, sans-serif' }}
                       >
-                        Pincode / Zip Code *
+                        Postal Code*
                       </label>
                       <input
                         type="text"
@@ -314,7 +316,7 @@ export function CheckoutPage() {
                         className="block text-xs md:text-base text-[#6B4A1E] mb-2"
                         style={{ fontFamily: 'Poppins, sans-serif' }}
                       >
-                        State *
+                        Province *
                       </label>
                       <input
                         type="text"
@@ -607,8 +609,7 @@ export function CheckoutPage() {
                     onClick={() => {
                       setShowSuccess(false);
                       if (lastOrderId) {
-                        setSelectedOrderId(lastOrderId);
-                        setCurrentPage('order-detail');
+                        setCurrentPage('order-detail', { orderId: lastOrderId });
                       } else {
                         setCurrentPage('profile');
                       }

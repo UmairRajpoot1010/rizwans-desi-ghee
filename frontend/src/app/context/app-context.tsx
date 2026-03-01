@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useRef, ReactNode, useCallback } from 'react';
 import { authApi, getErrorMessage } from '@/lib/api';
 import { AxiosError } from 'axios';
 
@@ -40,9 +40,11 @@ type AuthResult =
   | { ok: true; user: AuthUser }
   | { ok: false; message: string };
 
+type NavOptions = { orderId?: string; product?: Product };
+
 type AppContextType = {
   currentPage: string;
-  setCurrentPage: (page: string) => void;
+  setCurrentPage: (page: string, opts?: NavOptions) => void;
   selectedOrderId: string | null;
   setSelectedOrderId: (id: string | null) => void;
   cart: CartItem[];
@@ -52,6 +54,8 @@ type AppContextType = {
   clearCart: () => void;
   selectedProduct: Product | null;
   setSelectedProduct: (product: Product | null) => void;
+  /** Used when restoring from history - product page can fetch by this id */
+  selectedProductId: string | null;
 
   favourites: Product[];
   addToFavourites: (product: Product) => void;
@@ -88,19 +92,75 @@ function safeParseJSON<T>(value: string | null, fallback: T): T {
   }
 }
 
+type HistoryState = { page: string; orderId?: string; productId?: string };
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPageState] = useState('home');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [favourites, setFavourites] = useState<Product[]>([]);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [hasNewOrder, setHasNewOrder] = useState(false);
-
+  const favouritesRef = useRef<Product[]>([]);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const isAuthenticated = !!user;
+
+  // Sync navigation with browser history so back button works within the app
+  const setCurrentPage = useCallback(
+    (page: string, opts?: NavOptions) => {
+      const orderId = opts?.orderId ?? (page === 'order-detail' ? selectedOrderId : null);
+      const product = opts?.product;
+      const productId = product?.id;
+
+      if (orderId) setSelectedOrderId(orderId);
+      else if (page !== 'order-detail') setSelectedOrderId(null);
+
+      if (product) {
+        setSelectedProduct(product);
+        setSelectedProductId(productId ?? null);
+      } else if (page !== 'product') {
+        setSelectedProduct(null);
+        setSelectedProductId(null);
+      }
+
+      setCurrentPageState(page);
+
+      const state: HistoryState = { page, orderId: orderId ?? undefined, productId };
+      if (typeof window !== 'undefined') {
+        window.history.pushState(state, '', window.location.href);
+      }
+    },
+    [selectedOrderId]
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Replace initial history entry so back has something to pop to
+    window.history.replaceState({ page: 'home' }, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state as HistoryState | null;
+      if (state?.page) {
+        setCurrentPageState(state.page);
+        setSelectedOrderId(state.orderId ?? null);
+        setSelectedProductId(state.productId ?? null);
+        if (state.productId) {
+          const fromFav = favouritesRef.current.find((p) => p.id === state!.productId);
+          setSelectedProduct(fromFav ?? null);
+        } else {
+          setSelectedProduct(null);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount
 
   const addToFavourites = (product: Product) => {
     setFavourites((prev) =>
@@ -287,6 +347,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         clearCart,
         selectedProduct,
         setSelectedProduct,
+        selectedProductId,
 
         favourites,
         addToFavourites,
@@ -311,6 +372,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
       {children}
     </AppContext.Provider>
   );
+
+// keep ref updated
+useEffect(() => {
+  favouritesRef.current = favourites;
+}, [favourites]);
+
+useEffect(() => {
+  if (typeof window === 'undefined') return;
+
+  window.history.replaceState({ page: 'home' }, '', window.location.href);
+
+  const handlePopState = (e: PopStateEvent) => {
+    const state = e.state as HistoryState | null;
+    if (!state?.page) return;
+
+    setCurrentPageState(state.page);
+    setSelectedOrderId(state.orderId ?? null);
+    setSelectedProductId(state.productId ?? null);
+
+    if (state.productId) {
+      const fromFav = favouritesRef.current.find(
+        (p) => p.id === state.productId
+      );
+      setSelectedProduct(fromFav || null);
+    } else {
+      setSelectedProduct(null);
+    }
+  };
+
+  window.addEventListener('popstate', handlePopState);
+  return () => window.removeEventListener('popstate', handlePopState);
+}, []);
 }
 
 export function useApp() {

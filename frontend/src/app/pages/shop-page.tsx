@@ -34,8 +34,7 @@ export function ShopPage() {
   const { products, loading, error, refetch } = useProducts(apiParams);
 
   const handleViewProduct = (product: Product) => {
-    setSelectedProduct(product);
-    setCurrentPage('product');
+    setCurrentPage('product', { product });
     window.scrollTo(0, 0);
   };
 

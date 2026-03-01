@@ -9,7 +9,6 @@ export function ProfilePage() {
     isAuthenticated,
     setCurrentPage,
     logout,
-    setSelectedOrderId,
     updateUser,
     setHasNewOrder,
     setIsAuthOpen,
@@ -30,9 +29,8 @@ export function ProfilePage() {
   const [savingProfile, setSavingProfile] = useState(false)
 
   useEffect(() => {
-    setCurrentPage('profile')
     setHasNewOrder(false)
-  }, [setCurrentPage, setHasNewOrder])
+  }, [setHasNewOrder])
 
   useEffect(() => {
     if (user) {
@@ -86,8 +84,7 @@ export function ProfilePage() {
   }
 
   const handleOrderClick = (orderId: string) => {
-    setSelectedOrderId(orderId)
-    setCurrentPage('order-detail')
+    setCurrentPage('order-detail', { orderId })
     window.scrollTo(0, 0)
   }
 

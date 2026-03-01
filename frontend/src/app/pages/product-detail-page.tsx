@@ -5,7 +5,7 @@ import { useProduct } from '@/hooks/use-product';
 import { ProductImageZoom } from '@/app/components/product-image-zoom';
 
 export function ProductDetailPage() {
-  const { selectedProduct, addToCart, setCurrentPage } = useApp();
+  const { selectedProduct, selectedProductId, addToCart, setCurrentPage } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [reviewsData, setReviewsData] = useState<{ _id: string; name: string; rating: number; date: string; comment: string }[]>([]);
@@ -20,8 +20,8 @@ export function ProductDetailPage() {
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  // Use selectedProduct from context, or fetch by ID if we have it in URL/localStorage
-  const productId = selectedProduct?.id ?? null;
+  // Use selectedProduct from context, or selectedProductId (from history restore), or fetch by ID
+  const productId = selectedProduct?.id ?? selectedProductId ?? null;
   const { product: fetchedProduct, loading, error } = useProduct(productId);
   const product = selectedProduct ?? fetchedProduct ?? null;
 

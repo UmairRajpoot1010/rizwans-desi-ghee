@@ -24,8 +24,7 @@ export function TopCollection() {
   }, []);
 
   const handleQuickShop = (product: Product) => {
-    setSelectedProduct(product);
-    setCurrentPage('product');
+    setCurrentPage('product', { product });
     if (typeof window !== 'undefined') {
       window.scrollTo(0, 0);
     }

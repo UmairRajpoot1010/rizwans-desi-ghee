@@ -10,9 +10,9 @@ import bottle1kg from '@/assets/1KG.png';
 import bottle2kg from '@/assets/2KG.png';
 
 const WEIGHT_OPTIONS = [
-  { id: '500g', label: '500g', image: bottle500g.src, price: 1500 },
-  { id: '1kg', label: '1KG', image: bottle1kg.src, price: 3000 },
-  { id: '2kg', label: '2KG', image: bottle2kg.src, price: 6000 },
+  { id: '500g', label: '500g', image: bottle500g.src, price: 1750 },
+  { id: '1kg', label: '1KG', image: bottle1kg.src, price: 3400 },
+  { id: '2kg', label: '2KG', image: bottle2kg.src, price: 6799 },
 ];
 
 export function HomeProductShowcase() {

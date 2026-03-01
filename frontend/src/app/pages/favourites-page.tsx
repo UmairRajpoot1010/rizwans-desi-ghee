@@ -7,8 +7,7 @@ export function FavouritesPage() {
   const { favourites, removeFromFavourites, setSelectedProduct, setCurrentPage } = useApp();
 
   const handleBuyNow = (product: (typeof favourites)[0]) => {
-    setSelectedProduct(product);
-    setCurrentPage('product');
+    setCurrentPage('product', { product });
     window.scrollTo(0, 0);
   };
 
