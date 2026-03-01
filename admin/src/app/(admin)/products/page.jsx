@@ -66,7 +66,7 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      {/* Desktop Table Only */}
+      {/* Desktop Table */}
       <div className="table-container-desktop">
         <table className="admin-table">
           <thead>
@@ -129,6 +129,59 @@ export default function ProductsPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="cards-container-mobile">
+        {products.length === 0 ? (
+          <div className="empty-state">No products yet. Add your first product.</div>
+        ) : (
+          products.map((p) => (
+            <div key={p._id} className="product-card admin-card-mobile">
+              <div className="card-header">
+                <div className="product-card-title">
+                  {p.images?.[0] && (
+                    <img src={p.images[0]} alt="" className="product-card-thumb" />
+                  )}
+                  <h3>{p.name}</h3>
+                </div>
+                <span className={`badge ${p.isActive ? 'badge-success' : 'badge-muted'}`}>
+                  {p.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div className="card-body">
+                <div className="card-row">
+                  <span className="card-label">Category</span>
+                  <span className="card-value">{p.category || '-'}</span>
+                </div>
+                <div className="card-row">
+                  <span className="card-label">Price</span>
+                  <span className="card-value">Rs. {Number(p.price).toLocaleString()}</span>
+                </div>
+                <div className="card-row">
+                  <span className="card-label">Stock</span>
+                  <span className="card-value">{p.stock ?? 0}</span>
+                </div>
+              </div>
+              <div className="card-footer">
+                <button
+                  type="button"
+                  className="btn-sm btn-edit"
+                  onClick={() => handleEdit(p)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn-sm btn-danger"
+                  onClick={() => handleDelete(p._id, p.name)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
       {showForm && (
         <ProductForm

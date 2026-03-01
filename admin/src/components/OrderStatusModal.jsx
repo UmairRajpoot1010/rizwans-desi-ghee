@@ -6,6 +6,7 @@ import PaymentProofModal from './PaymentProofModal'
 
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
 const PAYMENT_OPTIONS = ['pending', 'paid', 'unverified', 'failed']
+const PAYMENT_OPTIONS_ONLINE = ['unverified', 'paid', 'failed']
 const PAYMENT_VERIFICATION_OPTIONS = ['pending', 'verified', 'rejected']
 
 export default function OrderStatusModal({ order, onClose, onSuccess }) {
@@ -147,28 +148,46 @@ export default function OrderStatusModal({ order, onClose, onSuccess }) {
               </div>
             )}
 
-            {/* Payment Verification (Online) */}
+            {/* Payment Status + Verification (Online with screenshot) */}
             {order.paymentMethod === 'ONLINE' && (
-              <div className="form-group">
-                <label>Payment Verification</label>
-                <select
-                  value={paymentVerificationStatus}
-                  onChange={(e) =>
-                    setPaymentVerificationStatus(e.target.value)
-                  }
-                >
-                  <option value="">Select verification status...</option>
-                  {PAYMENT_VERIFICATION_OPTIONS.map((p) => (
-                    <option key={p} value={p}>
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
-                    </option>
-                  ))}
-                </select>
-                <small>
-                  Verify or reject uploaded payment screenshots for online
-                  payments.
-                </small>
-              </div>
+              <>
+                <div className="form-group">
+                  <label>Payment Status</label>
+                  <select
+                    value={paymentStatus}
+                    onChange={(e) => setPaymentStatus(e.target.value)}
+                  >
+                    <option value="">Select payment status...</option>
+                    {PAYMENT_OPTIONS_ONLINE.map((p) => (
+                      <option key={p} value={p}>
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                  <small>
+                    Set to &quot;Paid&quot; after verifying the payment screenshot.
+                  </small>
+                </div>
+                <div className="form-group">
+                  <label>Payment Verification</label>
+                  <select
+                    value={paymentVerificationStatus}
+                    onChange={(e) =>
+                      setPaymentVerificationStatus(e.target.value)
+                    }
+                  >
+                    <option value="">Select verification status...</option>
+                    {PAYMENT_VERIFICATION_OPTIONS.map((p) => (
+                      <option key={p} value={p}>
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                  <small>
+                    Verify or reject uploaded payment screenshots.
+                  </small>
+                </div>
+              </>
             )}
 
             {/* Payment Screenshot */}
